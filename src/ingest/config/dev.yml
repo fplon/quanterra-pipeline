@@ -1,0 +1,21 @@
+gcp:
+  project_id: ${GCP_PROJECT_ID}
+  bucket_name: ${GCP_BUCKET_NAME}
+  credentials_path: ${GCP_CREDENTIALS_PATH}
+
+providers:
+  eodhd:
+    api_key: ${EODHD_API_KEY}
+    base_url: ${EODHD_BASE_URL}
+    exchanges: ["EUFUND"]
+    instruments:
+      - GB00B9876293
+      - GB00BG0QPQ07
+    economic_events:
+      countries: ["UK", "US"]
+      comparison: "previous"  # or "consensus"
+    macro_indicators:
+      countries: ["UK", "US"]
+      indicators: ["gdp", "inflation_rate"]
+    asset_types: ["ETF", "FUND"]  # for exchange symbols endpoint
+    include_delisted: false
