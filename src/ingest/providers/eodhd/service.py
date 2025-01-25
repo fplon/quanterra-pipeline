@@ -1,10 +1,8 @@
-import gzip
-import json
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
-from google.cloud import storage
+from src.common.gcp.client import GCPStorageClient
+from src.common.types import JSONType
 
 from .client import EODHDClient
 from .models import (
@@ -14,7 +12,6 @@ from .models import (
     EODHDExchangeSymbolData,
     StorageLocation,
 )
-from .types import JSONType
 
 
 @dataclass
@@ -22,11 +19,16 @@ class EODHDService:
     """Service for handling EODHD data operations."""
 
     config: EODHDConfig
-    client: Optional[EODHDClient] = None
+    eodhd_client: EODHDClient | None = None
+    storage_client: GCPStorageClient | None = None
 
     def __post_init__(self) -> None:
-        if self.client is None:
-            self.client = EODHDClient(api_key=self.config.api_key, base_url=self.config.base_url)
+        if self.eodhd_client is None:
+            self.eodhd_client = EODHDClient(
+                api_key=self.config.api_key, base_url=self.config.base_url
+            )
+        if self.storage_client is None:
+            self.storage_client = GCPStorageClient()
 
     def _get_storage_location(
         self, data: EODHDData | EODHDExchangeData | EODHDExchangeSymbolData
@@ -36,11 +38,11 @@ class EODHDService:
 
     async def fetch_and_store_exchange_symbol_data(self, exchange: str) -> StorageLocation:
         """Fetch and store data for a specific exchange."""
-        if self.client is None:
+        if self.eodhd_client is None:
             raise ValueError("Client not initialised")
 
         # TODO Not currently handling/using asset type or delisted
-        raw_data = await self.client.get_exchange_symbols(exchange)
+        raw_data = await self.eodhd_client.get_exchange_symbols(exchange)
 
         # Create data container
         data = EODHDExchangeSymbolData(
@@ -57,10 +59,10 @@ class EODHDService:
 
     async def fetch_and_store_exchange_data(self) -> StorageLocation:
         """Fetch and store data for a specific exchange."""
-        if self.client is None:
+        if self.eodhd_client is None:
             raise ValueError("Client not initialised")
 
-        raw_data = await self.client.get_exchanges()
+        raw_data = await self.eodhd_client.get_exchanges()
 
         # Create data container
         data = EODHDExchangeData(
@@ -78,7 +80,7 @@ class EODHDService:
         self, instrument: str, exchange: str, data_type: str = "eod"
     ) -> StorageLocation:
         """Fetch and store data for a specific instrument and data type."""
-        if self.client is None:
+        if self.eodhd_client is None:
             raise ValueError("Client not initialised")
 
         # Fetch data based on type
@@ -101,19 +103,19 @@ class EODHDService:
 
     async def _fetch_data_by_type(self, instrument: str, exchange: str, data_type: str) -> JSONType:
         """Fetch data based on type."""
-        if self.client is None:
+        if self.eodhd_client is None:
             raise ValueError("Client not initialised")
 
         if data_type == "eod":
-            return await self.client.get_eod_data(instrument, exchange)
+            return await self.eodhd_client.get_eod_data(instrument, exchange)
         elif data_type == "dividends":
-            return await self.client.get_dividends(instrument, exchange)
+            return await self.eodhd_client.get_dividends(instrument, exchange)
         elif data_type == "splits":
-            return await self.client.get_splits(instrument, exchange)
+            return await self.eodhd_client.get_splits(instrument, exchange)
         elif data_type == "fundamentals":
-            return await self.client.get_fundamentals(instrument, exchange)
+            return await self.eodhd_client.get_fundamentals(instrument, exchange)
         elif data_type == "news":
-            return await self.client.get_news(instrument, exchange)
+            return await self.eodhd_client.get_news(instrument, exchange)
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
@@ -123,20 +125,17 @@ class EODHDService:
         location: StorageLocation,
     ) -> None:
         """Store data in Google Cloud Storage."""
-        # TODO this should be replaced by GCP client - shouldn't be initialised everytime, only the blob
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(location.bucket)
-        blob = bucket.blob(location.path)
+        if self.storage_client is None:
+            raise RuntimeError("Storage client not initialized")
 
         # Convert data to JSON string with metadata
-        # TODO make dataclass with serialisation and compression logic?
         if isinstance(data, EODHDData):
             json_data = {
                 "data": data.data,
                 "metadata": {
                     "code": data.code,
                     "exchange": data.exchange,
-                    "data_type": data.data_type,  # TODO Enum or literal
+                    "data_type": data.data_type,
                     "timestamp": data.timestamp.isoformat(),
                 },
             }
@@ -158,15 +157,10 @@ class EODHDService:
                 },
             }
 
-        # Proper serialization
-        json_string = json.dumps(json_data)
-
-        # Compress
-        compressed_data = gzip.compress(json_string.encode("utf-8"))
-
-        # Set blob metadata
-        blob.content_encoding = "gzip"
-        blob.content_type = "text/plain"
-
-        # Upload compressed data
-        blob.upload_from_string(compressed_data)
+        # Store data using the GCP client
+        self.storage_client.store_json_data(
+            data=json_data,
+            bucket_name=location.bucket,
+            blob_path=location.path,
+            compress=True,
+        )

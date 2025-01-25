@@ -12,7 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from .types import JSONType
+from src.common.types import JSONType
 
 
 # TODO move to logging or utils?
