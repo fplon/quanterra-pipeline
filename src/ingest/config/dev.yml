@@ -7,10 +7,11 @@ providers:
   eodhd:
     api_key: ${EODHD_API_KEY}
     base_url: ${EODHD_BASE_URL}
-    exchanges: ["EUFUND"]
+    exchanges: ["EUFUND", "INDX"]
     instruments:
-      - GB00B9876293
-      - GB00BG0QPQ07
+      - GB00B9876293.EUFUND
+      - GB00BG0QPQ07.EUFUND
+      - IXIC.INDX
     economic_events:
       countries: ["UK", "US"]
       comparison: "previous"  # or "consensus"

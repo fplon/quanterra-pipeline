@@ -83,14 +83,17 @@ class Settings:
 
         return cls(env=env, gcp=gcp, eodhd=eodhd)
 
+    # TODO this should be a method on the provider service
     def get_provider_instruments(self, provider: str) -> list[tuple[str, str]]:
         """Get list of exchange/instrument pairs for a provider."""
         provider_config = getattr(self, provider)
-        return [
-            (exchange, instrument)
-            for exchange in provider_config.exchanges
-            for instrument in provider_config.instruments
-        ]
+        return [tuple(instrument.split(".", 1)) for instrument in provider_config.instruments]
+
+    # TODO this should be a method on the provider service
+    def get_provider_exchanges(self, provider: str) -> list[str]:
+        """Get list of exchanges for a provider."""
+        provider_config = getattr(self, provider)
+        return [exchange for exchange in provider_config.exchanges]
 
 
 # Global settings instance
