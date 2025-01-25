@@ -31,7 +31,7 @@ class EODHDService:
         """Fetch EOD data and store it in GCS."""
         # Fetch data
         if self.client is None:
-            raise ValueError("Client not initialized")
+            raise ValueError("Client not initialised")
 
         raw_data = await self.client.get_eod_data(instrument, exchange)
 

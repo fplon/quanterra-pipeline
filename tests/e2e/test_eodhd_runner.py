@@ -1,8 +1,8 @@
 import asyncio
 
-from src.ingest.runners.eodhd import main
+from src.scripts.ingest.eodhd import run_eodhd_ingestion
 
 
 def test_eodhd_runner() -> None:
-    asyncio.run(main())
+    asyncio.run(run_eodhd_ingestion())
     assert True
