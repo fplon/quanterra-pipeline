@@ -2,8 +2,8 @@ from loguru import logger
 
 from src.common.logging.config import setup_logger
 from src.ingest.config.settings import get_settings
+from src.ingest.providers.eodhd.factory import EODHDServiceFactory, ServiceType
 from src.ingest.providers.eodhd.models import EODHDConfig
-from src.ingest.providers.eodhd.service import EODHDService
 
 
 async def run_eodhd_ingestion() -> None:
@@ -25,68 +25,27 @@ async def run_eodhd_ingestion() -> None:
             instruments=settings.eodhd.instruments,
         )
 
-        # Create service
-        service = EODHDService(config=eodhd_config)
+        # Initialise service factory
+        factory = EODHDServiceFactory()
 
-        # TODO Exchange-level data processing - async?
-        logger.info("Processing exchange data")
-        try:
-            with logger.catch(message="Failed to process exchange data"):
-                location = await service.fetch_and_store_exchange_data()
-                logger.success(f"Stored exchange data at: {location}")
-        except Exception:
-            logger.exception("Error processing exchange data")
-            raise
+        # Process exchange data
+        service = factory.create_service(ServiceType.EXCHANGE, eodhd_config)
+        await service.process()
 
-        # TODO Exchange-symbol-level data processing - async?
-        exchanges = settings.get_provider_exchanges("eodhd")
+        # Process exchange symbol data
+        service = factory.create_service(ServiceType.EXCHANGE_SYMBOL, eodhd_config)
+        await service.process()
 
-        logger.info(f"Processing exchange-symbol data for {len(exchanges)} exchanges")
-
-        for exchange in exchanges:
-            try:
-                logger.info(f"Processing exchange-symbol data for {exchange}")
-                with logger.catch(message="Failed to process exchange-symbol data"):
-                    location = await service.fetch_and_store_exchange_symbol_data(exchange)
-                    logger.success(f"Stored exchange-symbol data at: {location}")
-            except Exception:
-                logger.exception("Error processing exchange-symbol data")
-                raise
-
-        # TODO Instrument-level data processing - async?
-        # Get all instrument pairs to process
-        instrument_pairs = settings.get_provider_instruments("eodhd")
-
-        # Data types to fetch
+        # Process instrument data
         data_types = ["eod", "dividends", "splits", "fundamentals", "news"]
+        service = factory.create_service(ServiceType.INSTRUMENT, eodhd_config, data_types)
+        await service.process()
 
-        logger.info(
-            f"Starting EODHD ingestion for {len(instrument_pairs)} instruments "
-            f"across {len(data_types)} data types"
-        )
-
-        # Process each instrument
-        for instrument, exchange in instrument_pairs:
-            for data_type in data_types:
-                try:
-                    logger.info(f"Processing {data_type} data for {exchange}/{instrument}")
-                    with logger.catch(
-                        message=f"Failed to process {data_type} data for {exchange}/{instrument}"
-                    ):
-                        location = await service.fetch_and_store_data(
-                            instrument=instrument, exchange=exchange, data_type=data_type
-                        )
-                        logger.success(
-                            f"Stored {data_type} data for {exchange}/{instrument} at: {location}"
-                        )
-
-                except Exception:
-                    logger.exception(
-                        f"Error processing {data_type} data for {exchange}/{instrument}"
-                    )
-                    continue
+        # Process economic data #TODO
+        # service = factory.create_service(ServiceType.ECONOMIC, eodhd_config)
+        # await service.process()
 
         logger.success("EODHD data ingestion completed successfully")
     except Exception:
-        logger.exception("Fatal error in main")
+        logger.exception("Fatal error in EODHD ingestion")
         raise
