@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 
 from src.common.types import JSONType
 
@@ -16,44 +17,91 @@ class EODHDConfig:
 
 
 @dataclass
-class EODHDExchangeData:
-    """Container for EODHD exchange data."""
+class BaseEODHDData:
+    """Base class for all EODHD data types."""
 
     data: JSONType
     timestamp: datetime
+    data_type: str
+
+    def to_json(self) -> dict[str, JSONType]:
+        """Convert to JSON format for storage."""
+        return {
+            "data": self.data,
+            "metadata": self._get_metadata(),
+        }
+
+    def _get_metadata(self) -> dict[str, str]:
+        """Get metadata for the data object."""
+        return {
+            "data_type": self.data_type,
+            "timestamp": self.timestamp.isoformat(),
+        }
 
     def get_storage_path(self) -> str:
-        """Generate storage path based on data type."""
+        """Generate storage path."""
         date_str = self.timestamp.strftime("%Y/%m/%d")
-        return f"eodhd/exchanges-list/{date_str}.json.gz"
+        return f"eodhd/{self.data_type}/{date_str}.json.gz"
 
 
 @dataclass
-class EODHDExchangeSymbolData:
-    """Container for EODHD exchange symbol data."""
+class ExchangeData(BaseEODHDData):
+    """Container for exchange list data."""
+
+    def __init__(self, data: JSONType, timestamp: datetime):
+        super().__init__(data=data, timestamp=timestamp, data_type="exchanges-list")
+
+
+@dataclass
+class ExchangeSymbolData(BaseEODHDData):
+    """Container for exchange symbol data."""
 
     exchange: str
-    data: JSONType
-    timestamp: datetime
+
+    def __init__(self, data: JSONType, exchange: str, timestamp: datetime):
+        super().__init__(data=data, timestamp=timestamp, data_type="exchange-symbol-list")
+        self.exchange = exchange
+
+    def _get_metadata(self) -> dict[str, str]:
+        metadata = super()._get_metadata()
+        metadata["exchange"] = self.exchange
+        return metadata
 
     def get_storage_path(self) -> str:
-        """Generate storage path based on data type."""
         date_str = self.timestamp.strftime("%Y/%m/%d")
-        return f"eodhd/exchange-symbol-list/{date_str}/{self.exchange}.json.gz"
+        return f"eodhd/{self.data_type}/{date_str}/{self.exchange}.json.gz"
 
 
 @dataclass
-class EODHDData:
-    """Container for EODHD data."""
+class InstrumentData(BaseEODHDData):
+    """Container for instrument-specific data."""
 
     code: str
     exchange: str
-    data: JSONType
-    timestamp: datetime
-    data_type: str  # eod, dividends, splits
+
+    def __init__(
+        self,
+        data: JSONType,
+        code: str,
+        exchange: str,
+        data_type: Literal["eod", "dividends", "splits", "fundamentals", "news"],
+        timestamp: datetime,
+    ):
+        super().__init__(data=data, timestamp=timestamp, data_type=data_type)
+        self.code = code
+        self.exchange = exchange
+
+    def _get_metadata(self) -> dict[str, str]:
+        metadata = super()._get_metadata()
+        metadata.update(
+            {
+                "code": self.code,
+                "exchange": self.exchange,
+            }
+        )
+        return metadata
 
     def get_storage_path(self) -> str:
-        """Generate storage path based on data type."""
         date_str = self.timestamp.strftime("%Y/%m/%d")
         return f"eodhd/{self.data_type}/{date_str}/{self.exchange}/{self.code}.json.gz"
 

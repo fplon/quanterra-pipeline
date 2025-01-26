@@ -8,10 +8,11 @@ from src.common.gcp.client import GCPStorageClient
 from src.common.types import JSONType
 from src.ingest.providers.eodhd.client import EODHDClient
 from src.ingest.providers.eodhd.models import (
+    BaseEODHDData,
     EODHDConfig,
-    EODHDData,
-    EODHDExchangeData,
-    EODHDExchangeSymbolData,
+    ExchangeData,
+    ExchangeSymbolData,
+    InstrumentData,
     StorageLocation,
 )
 
@@ -30,56 +31,17 @@ class EODIngestionService(ABC):
         """Execute the ingestion process."""
         pass
 
-    async def _store_data(
-        self,
-        data: EODHDData | EODHDExchangeData | EODHDExchangeSymbolData,
-        location: StorageLocation,
-    ) -> None:
+    async def _store_data(self, data: BaseEODHDData, location: StorageLocation) -> None:
         """Store data in Google Cloud Storage."""
         if self.storage_client is None:
             raise RuntimeError("Storage client not initialized")
 
-        json_data = self._prepare_json_data(data)
-
-        # Store data using the GCP client
         self.storage_client.store_json_data(
-            data=json_data,
+            data=data.to_json(),
             bucket_name=location.bucket,
             blob_path=location.path,
             compress=True,
         )
-
-    def _prepare_json_data(
-        self, data: EODHDData | EODHDExchangeData | EODHDExchangeSymbolData
-    ) -> dict:  # type: ignore # FIXME creates upload types
-        """Prepare JSON data for storage with appropriate metadata."""
-        if isinstance(data, EODHDData):
-            return {
-                "data": data.data,
-                "metadata": {
-                    "code": data.code,
-                    "exchange": data.exchange,
-                    "data_type": data.data_type,
-                    "timestamp": data.timestamp.isoformat(),
-                },
-            }
-        elif isinstance(data, EODHDExchangeData):
-            return {
-                "data": data.data,
-                "metadata": {
-                    "data_type": "exchanges-list",
-                    "timestamp": data.timestamp.isoformat(),
-                },
-            }
-        else:  # EODHDExchangeSymbolData
-            return {
-                "data": data.data,
-                "metadata": {
-                    "exchange": data.exchange,
-                    "data_type": "exchange-symbol-list",
-                    "timestamp": data.timestamp.isoformat(),
-                },
-            }
 
 
 class ExchangeDataService(EODIngestionService):
@@ -89,7 +51,7 @@ class ExchangeDataService(EODIngestionService):
         logger.info("Processing exchange data")
         try:
             raw_data = await self.eodhd_client.get_exchanges()
-            data = EODHDExchangeData(
+            data = ExchangeData(
                 data=raw_data,
                 timestamp=datetime.now(),
             )
@@ -111,7 +73,7 @@ class ExchangeSymbolService(EODIngestionService):
             try:
                 logger.info(f"Processing exchange-symbol data for {exchange}")
                 raw_data = await self.eodhd_client.get_exchange_symbols(exchange)
-                data = EODHDExchangeSymbolData(
+                data = ExchangeSymbolData(
                     exchange=exchange,
                     data=raw_data,
                     timestamp=datetime.now(),
@@ -144,12 +106,12 @@ class InstrumentDataService(EODIngestionService):
                 try:
                     logger.info(f"Processing {data_type} data for {exchange}/{instrument}")
                     raw_data = await self._fetch_data_by_type(instrument, exchange, data_type)
-                    data = EODHDData(
+                    data = InstrumentData(
                         code=instrument,
                         exchange=exchange,
                         data=raw_data,
                         timestamp=datetime.now(),
-                        data_type=data_type,
+                        data_type=data_type,  # type: ignore # FIXME str vs literal
                     )
                     location = StorageLocation(
                         bucket=self.config.bucket_name, path=data.get_storage_path()
