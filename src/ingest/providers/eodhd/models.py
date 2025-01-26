@@ -13,6 +13,8 @@ class EODHDConfig:
     bucket_name: str
     exchanges: list[str]
     instruments: list[str]
+    macro_indicators: list[str]
+    macro_countries: list[str]
 
 
 @dataclass
@@ -103,6 +105,41 @@ class InstrumentData(BaseEODHDData):
     def get_storage_path(self) -> str:
         date_str = self.timestamp.strftime("%Y/%m/%d")
         return f"eodhd/{self.data_type}/{date_str}/{self.exchange}/{self.code}.json.gz"
+
+
+@dataclass
+class MacroData(BaseEODHDData):
+    """Container for macroeconomic data."""
+
+    iso_code: str
+    indicator: str
+
+    def __init__(self, data: JSONType, iso_code: str, indicator: str, timestamp: datetime):
+        super().__init__(data=data, timestamp=timestamp, data_type="macro-indicators")
+        self.iso_code = iso_code
+        self.indicator = indicator
+
+    def _get_metadata(self) -> dict[str, str]:
+        metadata = super()._get_metadata()
+        metadata.update(
+            {
+                "iso_code": self.iso_code,
+                "indicator": self.indicator,
+            }
+        )
+        return metadata
+
+    def get_storage_path(self) -> str:
+        date_str = self.timestamp.strftime("%Y/%m/%d")
+        return f"eodhd/{self.data_type}/{date_str}/{self.iso_code}/{self.indicator}.json.gz"
+
+
+@dataclass
+class EconomicEventData(BaseEODHDData):
+    """Container for economic event data."""
+
+    def __init__(self, data: JSONType, timestamp: datetime):
+        super().__init__(data=data, timestamp=timestamp, data_type="economic-events")
 
 
 @dataclass

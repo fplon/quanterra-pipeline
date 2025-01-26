@@ -2,10 +2,12 @@ from enum import Enum
 
 from .models import EODHDConfig
 from .services import (
+    EconomicEventDataService,
     EODIngestionService,
     ExchangeDataService,
     ExchangeSymbolService,
     InstrumentDataService,
+    MacroDataService,
 )
 
 
@@ -13,6 +15,8 @@ class ServiceType(Enum):
     EXCHANGE = "exchange"
     EXCHANGE_SYMBOL = "exchange_symbol"
     INSTRUMENT = "instrument"
+    MACRO = "macro-indicator"
+    ECONOMIC_EVENT = "economic_event"
 
 
 class EODHDServiceFactory:
@@ -29,5 +33,7 @@ class EODHDServiceFactory:
             return ExchangeSymbolService(config)
         elif service_type == ServiceType.INSTRUMENT:
             return InstrumentDataService(config)
-        else:
-            raise ValueError(f"Unknown service type: {service_type}")
+        elif service_type == ServiceType.MACRO:
+            return MacroDataService(config)
+        elif service_type == ServiceType.ECONOMIC_EVENT:
+            return EconomicEventDataService(config)

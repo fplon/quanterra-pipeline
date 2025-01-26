@@ -23,6 +23,8 @@ async def run_eodhd_ingestion() -> None:
             bucket_name=settings.gcp.bucket_name,
             exchanges=settings.eodhd.exchanges,
             instruments=settings.eodhd.instruments,
+            macro_indicators=settings.eodhd.macro_indicators["indicators"],
+            macro_countries=settings.eodhd.macro_indicators["countries"],
         )
 
         # Initialise service factory
@@ -40,9 +42,13 @@ async def run_eodhd_ingestion() -> None:
         instrument_service = factory.create_service(ServiceType.INSTRUMENT, eodhd_config)
         await instrument_service.process()
 
-        # Process economic data #TODO
-        # service = factory.create_service(ServiceType.ECONOMIC, eodhd_config)
-        # await service.process()
+        # Process macroeconomic indicators data
+        macro_service = factory.create_service(ServiceType.MACRO, eodhd_config)
+        await macro_service.process()
+
+        # Process economic events data
+        econ_events_service = factory.create_service(ServiceType.ECONOMIC_EVENT, eodhd_config)
+        await econ_events_service.process()
 
         logger.success("EODHD data ingestion completed successfully")
     except Exception:

@@ -12,11 +12,11 @@ providers:
       - GB00B9876293.EUFUND
       - GB00BG0QPQ07.EUFUND
       - IXIC.INDX
-    economic_events:
-      countries: ["UK", "US"]
-      comparison: "previous"  # or "consensus"
     macro_indicators:
-      countries: ["UK", "US"]
-      indicators: ["gdp", "inflation_rate"]
+      countries: ["GBR", "USA"]
+      indicators:
+        - "unemployment_total_percent"
+        - "inflation_consumer_prices_annual"
+        - "gdp_growth_annual"
     asset_types: ["ETF", "FUND"]  # for exchange symbols endpoint
     include_delisted: false

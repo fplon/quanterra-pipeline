@@ -26,7 +26,6 @@ class EODHDSettings:
     base_url: str
     exchanges: list[str]
     instruments: list[str]
-    economic_events: dict[str, list[str] | str]
     macro_indicators: dict[str, list[str]]
     asset_types: list[str]
     include_delisted: bool = False
@@ -71,9 +70,6 @@ class Settings:
             base_url=os.getenv("EODHD_BASE_URL", eodhd_config.get("base_url", "")),
             exchanges=eodhd_config.get("exchanges", []),
             instruments=eodhd_config.get("instruments", []),
-            economic_events=eodhd_config.get(
-                "economic_events", {"countries": [], "comparison": "previous"}
-            ),
             macro_indicators=eodhd_config.get(
                 "macro_indicators", {"countries": [], "indicators": []}
             ),

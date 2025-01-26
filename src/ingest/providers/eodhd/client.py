@@ -114,16 +114,25 @@ class EODHDClient:
         return cast(JSONType, response.json())
 
     async def get_economic_events(
-        self, country: str, comparison: str, start_date: str, end_date: str, limit: int = 1000
+        self,
+        country: str | None = None,
+        comparison: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        limit: int = 1000,
     ) -> JSONType:
         """Get economic calendar events."""
         params = {
-            "from": start_date,
-            "to": end_date,
-            "country": country,
-            "comparison": comparison,
             "limit": str(limit),
         }
+        if country:
+            params["country"] = country
+        if comparison:
+            params["comparison"] = comparison
+        if start_date:
+            params["from"] = start_date
+        if end_date:
+            params["to"] = end_date
         response = await self._make_request("economic-events", params)
         return cast(JSONType, response.json())
 

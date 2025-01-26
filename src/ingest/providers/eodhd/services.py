@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Awaitable, Callable, List
+from typing import Awaitable, Callable
 
 from loguru import logger
 
@@ -9,10 +9,12 @@ from src.common.types import JSONType
 from src.ingest.providers.eodhd.client import EODHDClient
 from src.ingest.providers.eodhd.models import (
     BaseEODHDData,
+    EconomicEventData,
     EODHDConfig,
     ExchangeData,
     ExchangeSymbolData,
     InstrumentData,
+    MacroData,
     StorageLocation,
 )
 
@@ -27,7 +29,7 @@ class EODIngestionService(ABC):
         self.storage_client = GCPStorageClient()
 
     @abstractmethod
-    async def process(self) -> List[StorageLocation]:
+    async def process(self) -> list[StorageLocation]:
         """Execute the ingestion process."""
         pass
 
@@ -47,7 +49,7 @@ class EODIngestionService(ABC):
 class ExchangeDataService(EODIngestionService):
     """Service for processing exchange-level data."""
 
-    async def process(self) -> List[StorageLocation]:
+    async def process(self) -> list[StorageLocation]:
         logger.info("Processing exchange data")
         try:
             raw_data = await self.eodhd_client.get_exchanges()
@@ -67,7 +69,7 @@ class ExchangeDataService(EODIngestionService):
 class ExchangeSymbolService(EODIngestionService):
     """Service for processing exchange-symbol data."""
 
-    async def process(self) -> List[StorageLocation]:
+    async def process(self) -> list[StorageLocation]:
         locations = []
         for exchange in self.config.exchanges:
             try:
@@ -103,7 +105,7 @@ class InstrumentDataService(EODIngestionService):
             "news": self.eodhd_client.get_news,
         }
 
-    async def process(self) -> List[StorageLocation]:
+    async def process(self) -> list[StorageLocation]:
         locations = []
         instrument_pairs = [(i.split(".", 1)) for i in self.config.instruments]
 
@@ -138,3 +140,53 @@ class InstrumentDataService(EODIngestionService):
         if handler is None:
             raise ValueError(f"Unsupported data type: {data_type}")
         return await handler(instrument, exchange)
+
+
+class MacroDataService(EODIngestionService):
+    """Service for processing macroeconomic data."""
+
+    async def process(self) -> list[StorageLocation]:
+        locations = []
+        for indicator in self.config.macro_indicators:
+            for iso_code in self.config.macro_countries:
+                try:
+                    logger.info(f"Processing macroeconomic data for {iso_code}/{indicator}")
+                    raw_data = await self.eodhd_client.get_macro_indicator(iso_code, indicator)
+                    data = MacroData(
+                        iso_code=iso_code,
+                        indicator=indicator,
+                        data=raw_data,
+                        timestamp=datetime.now(),
+                    )
+                    location = StorageLocation(
+                        bucket=self.config.bucket_name, path=data.get_storage_path()
+                    )
+                    await self._store_data(data, location)
+                    logger.success(f"Stored macroeconomic data at: {location}")
+                    locations.append(location)
+                except Exception:
+                    logger.exception(
+                        f"Error processing macroeconomic data for {iso_code}/{indicator}"
+                    )
+                    continue
+        return locations
+
+
+class EconomicEventDataService(EODIngestionService):
+    """Service for processing economic event data."""
+
+    async def process(self) -> list[StorageLocation]:
+        logger.info("Processing economic event data")
+        try:
+            raw_data = await self.eodhd_client.get_economic_events()
+            data = EconomicEventData(
+                data=raw_data,
+                timestamp=datetime.now(),
+            )
+            location = StorageLocation(bucket=self.config.bucket_name, path=data.get_storage_path())
+            await self._store_data(data, location)
+            logger.success(f"Stored economic event data at: {location}")
+            return [location]
+        except Exception:
+            logger.exception("Error processing economic event data")
+            raise
