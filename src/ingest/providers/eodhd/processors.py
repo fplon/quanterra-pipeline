@@ -19,8 +19,8 @@ from src.ingest.providers.eodhd.models import (
 )
 
 
-class EODIngestionService(ABC):
-    """Base service for EODHD data ingestion."""
+class EODIngestionProcessor(ABC):
+    """Base processor for EODHD data ingestion."""
 
     def __init__(self, config: EODHDConfig):
         self.config = config
@@ -46,8 +46,8 @@ class EODIngestionService(ABC):
         )
 
 
-class ExchangeDataService(EODIngestionService):
-    """Service for processing exchange-level data."""
+class ExchangeDataProcessor(EODIngestionProcessor):
+    """Processor for fetching and storing exchange-level data."""
 
     async def process(self) -> list[StorageLocation]:
         logger.info("Processing exchange data")
@@ -66,8 +66,8 @@ class ExchangeDataService(EODIngestionService):
             raise
 
 
-class ExchangeSymbolService(EODIngestionService):
-    """Service for processing exchange-symbol data."""
+class ExchangeSymbolDataProcessor(EODIngestionProcessor):
+    """Processor for fetching and storing exchange-symbol data."""
 
     async def process(self) -> list[StorageLocation]:
         locations = []
@@ -92,8 +92,8 @@ class ExchangeSymbolService(EODIngestionService):
         return locations
 
 
-class InstrumentDataService(EODIngestionService):
-    """Service for processing instrument-specific data."""
+class InstrumentDataProcessor(EODIngestionProcessor):
+    """Processor for fetching and storing instrument-specific data."""
 
     def __init__(self, config: EODHDConfig):
         super().__init__(config)
@@ -142,8 +142,8 @@ class InstrumentDataService(EODIngestionService):
         return await handler(instrument, exchange)
 
 
-class MacroDataService(EODIngestionService):
-    """Service for processing macroeconomic data."""
+class MacroDataProcessor(EODIngestionProcessor):
+    """Processor for fetching and storing macroeconomic data."""
 
     async def process(self) -> list[StorageLocation]:
         locations = []
@@ -172,8 +172,8 @@ class MacroDataService(EODIngestionService):
         return locations
 
 
-class EconomicEventDataService(EODIngestionService):
-    """Service for processing economic event data."""
+class EconomicEventDataProcessor(EODIngestionProcessor):
+    """Processor for fetching and storing economic event data."""
 
     async def process(self) -> list[StorageLocation]:
         logger.info("Processing economic event data")

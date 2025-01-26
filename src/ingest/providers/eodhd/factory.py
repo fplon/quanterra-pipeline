@@ -1,17 +1,17 @@
 from enum import Enum
 
 from .models import EODHDConfig
-from .services import (
-    EconomicEventDataService,
-    EODIngestionService,
-    ExchangeDataService,
-    ExchangeSymbolService,
-    InstrumentDataService,
-    MacroDataService,
+from .processors import (
+    EconomicEventDataProcessor,
+    EODIngestionProcessor,
+    ExchangeDataProcessor,
+    ExchangeSymbolDataProcessor,
+    InstrumentDataProcessor,
+    MacroDataProcessor,
 )
 
 
-class ServiceType(Enum):
+class ProcessorType(Enum):
     EXCHANGE = "exchange"
     EXCHANGE_SYMBOL = "exchange_symbol"
     INSTRUMENT = "instrument"
@@ -19,21 +19,21 @@ class ServiceType(Enum):
     ECONOMIC_EVENT = "economic_event"
 
 
-class EODHDServiceFactory:
-    """Factory for creating EODHD ingestion services."""
+class EODHDProcessorFactory:
+    """Factory for creating EODHD ingestion processors."""
 
     @staticmethod
-    def create_service(
-        service_type: ServiceType,
+    def create_processor(
+        processor_type: ProcessorType,
         config: EODHDConfig,
-    ) -> EODIngestionService:
-        if service_type == ServiceType.EXCHANGE:
-            return ExchangeDataService(config)
-        elif service_type == ServiceType.EXCHANGE_SYMBOL:
-            return ExchangeSymbolService(config)
-        elif service_type == ServiceType.INSTRUMENT:
-            return InstrumentDataService(config)
-        elif service_type == ServiceType.MACRO:
-            return MacroDataService(config)
-        elif service_type == ServiceType.ECONOMIC_EVENT:
-            return EconomicEventDataService(config)
+    ) -> EODIngestionProcessor:
+        if processor_type == ProcessorType.EXCHANGE:
+            return ExchangeDataProcessor(config)
+        elif processor_type == ProcessorType.EXCHANGE_SYMBOL:
+            return ExchangeSymbolDataProcessor(config)
+        elif processor_type == ProcessorType.INSTRUMENT:
+            return InstrumentDataProcessor(config)
+        elif processor_type == ProcessorType.MACRO:
+            return MacroDataProcessor(config)
+        elif processor_type == ProcessorType.ECONOMIC_EVENT:
+            return EconomicEventDataProcessor(config)

@@ -2,7 +2,7 @@ from loguru import logger
 
 from src.common.logging.config import setup_logger
 from src.ingest.config.settings import get_settings
-from src.ingest.providers.eodhd.factory import EODHDServiceFactory, ServiceType
+from src.ingest.providers.eodhd.factory import EODHDProcessorFactory, ProcessorType
 from src.ingest.providers.eodhd.models import EODHDConfig
 
 
@@ -28,27 +28,27 @@ async def run_eodhd_ingestion() -> None:
         )
 
         # Initialise service factory
-        factory = EODHDServiceFactory()
+        factory = EODHDProcessorFactory()
 
         # Process exchange data
-        exchange_service = factory.create_service(ServiceType.EXCHANGE, eodhd_config)
-        await exchange_service.process()
+        exchange_processor = factory.create_processor(ProcessorType.EXCHANGE, eodhd_config)
+        await exchange_processor.process()
 
         # Process exchange symbol data
-        symbol_service = factory.create_service(ServiceType.EXCHANGE_SYMBOL, eodhd_config)
-        await symbol_service.process()
+        symbol_processor = factory.create_processor(ProcessorType.EXCHANGE_SYMBOL, eodhd_config)
+        await symbol_processor.process()
 
         # Process instrument data
-        instrument_service = factory.create_service(ServiceType.INSTRUMENT, eodhd_config)
-        await instrument_service.process()
+        instrument_processor = factory.create_processor(ProcessorType.INSTRUMENT, eodhd_config)
+        await instrument_processor.process()
 
         # Process macroeconomic indicators data
-        macro_service = factory.create_service(ServiceType.MACRO, eodhd_config)
-        await macro_service.process()
+        macro_processor = factory.create_processor(ProcessorType.MACRO, eodhd_config)
+        await macro_processor.process()
 
         # Process economic events data
-        econ_events_service = factory.create_service(ServiceType.ECONOMIC_EVENT, eodhd_config)
-        await econ_events_service.process()
+        econ_events_processor = factory.create_processor(ProcessorType.ECONOMIC_EVENT, eodhd_config)
+        await econ_events_processor.process()
 
         logger.success("EODHD data ingestion completed successfully")
     except Exception:
