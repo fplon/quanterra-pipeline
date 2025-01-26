@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List
+from typing import Awaitable, Callable, List
 
 from loguru import logger
 
@@ -93,16 +93,22 @@ class ExchangeSymbolService(EODIngestionService):
 class InstrumentDataService(EODIngestionService):
     """Service for processing instrument-specific data."""
 
-    def __init__(self, config: EODHDConfig, data_types: List[str]):
+    def __init__(self, config: EODHDConfig):
         super().__init__(config)
-        self.data_types = data_types
+        self._data_type_handlers: dict[str, Callable[[str, str], Awaitable[JSONType]]] = {
+            "eod": self.eodhd_client.get_eod_data,
+            "dividends": self.eodhd_client.get_dividends,
+            "splits": self.eodhd_client.get_splits,
+            "fundamentals": self.eodhd_client.get_fundamentals,
+            "news": self.eodhd_client.get_news,
+        }
 
     async def process(self) -> List[StorageLocation]:
         locations = []
         instrument_pairs = [(i.split(".", 1)) for i in self.config.instruments]
 
         for instrument, exchange in instrument_pairs:
-            for data_type in self.data_types:
+            for data_type in self._data_type_handlers.keys():
                 try:
                     logger.info(f"Processing {data_type} data for {exchange}/{instrument}")
                     raw_data = await self._fetch_data_by_type(instrument, exchange, data_type)
@@ -111,7 +117,7 @@ class InstrumentDataService(EODIngestionService):
                         exchange=exchange,
                         data=raw_data,
                         timestamp=datetime.now(),
-                        data_type=data_type,  # type: ignore # FIXME str vs literal
+                        data_type=data_type,
                     )
                     location = StorageLocation(
                         bucket=self.config.bucket_name, path=data.get_storage_path()
@@ -128,15 +134,7 @@ class InstrumentDataService(EODIngestionService):
 
     async def _fetch_data_by_type(self, instrument: str, exchange: str, data_type: str) -> JSONType:
         """Fetch data based on type."""
-        if data_type == "eod":
-            return await self.eodhd_client.get_eod_data(instrument, exchange)
-        elif data_type == "dividends":
-            return await self.eodhd_client.get_dividends(instrument, exchange)
-        elif data_type == "splits":
-            return await self.eodhd_client.get_splits(instrument, exchange)
-        elif data_type == "fundamentals":
-            return await self.eodhd_client.get_fundamentals(instrument, exchange)
-        elif data_type == "news":
-            return await self.eodhd_client.get_news(instrument, exchange)
-        else:
+        handler = self._data_type_handlers.get(data_type)
+        if handler is None:
             raise ValueError(f"Unsupported data type: {data_type}")
+        return await handler(instrument, exchange)

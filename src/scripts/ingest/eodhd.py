@@ -29,17 +29,16 @@ async def run_eodhd_ingestion() -> None:
         factory = EODHDServiceFactory()
 
         # Process exchange data
-        service = factory.create_service(ServiceType.EXCHANGE, eodhd_config)
-        await service.process()
+        exchange_service = factory.create_service(ServiceType.EXCHANGE, eodhd_config)
+        await exchange_service.process()
 
         # Process exchange symbol data
-        service = factory.create_service(ServiceType.EXCHANGE_SYMBOL, eodhd_config)
-        await service.process()
+        symbol_service = factory.create_service(ServiceType.EXCHANGE_SYMBOL, eodhd_config)
+        await symbol_service.process()
 
         # Process instrument data
-        data_types = ["eod", "dividends", "splits", "fundamentals", "news"]
-        service = factory.create_service(ServiceType.INSTRUMENT, eodhd_config, data_types)
-        await service.process()
+        instrument_service = factory.create_service(ServiceType.INSTRUMENT, eodhd_config)
+        await instrument_service.process()
 
         # Process economic data #TODO
         # service = factory.create_service(ServiceType.ECONOMIC, eodhd_config)

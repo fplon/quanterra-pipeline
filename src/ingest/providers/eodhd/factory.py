@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List
 
 from .models import EODHDConfig
 from .services import (
@@ -23,15 +22,12 @@ class EODHDServiceFactory:
     def create_service(
         service_type: ServiceType,
         config: EODHDConfig,
-        data_types: List[str] | None = None,
     ) -> EODIngestionService:
         if service_type == ServiceType.EXCHANGE:
             return ExchangeDataService(config)
         elif service_type == ServiceType.EXCHANGE_SYMBOL:
             return ExchangeSymbolService(config)
         elif service_type == ServiceType.INSTRUMENT:
-            if not data_types:
-                raise ValueError("Data types required for instrument service")
-            return InstrumentDataService(config, data_types)
+            return InstrumentDataService(config)
         else:
             raise ValueError(f"Unknown service type: {service_type}")

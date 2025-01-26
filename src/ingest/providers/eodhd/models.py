@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
 
 from src.common.types import JSONType
 
@@ -84,7 +83,7 @@ class InstrumentData(BaseEODHDData):
         data: JSONType,
         code: str,
         exchange: str,
-        data_type: Literal["eod", "dividends", "splits", "fundamentals", "news"],
+        data_type: str,
         timestamp: datetime,
     ):
         super().__init__(data=data, timestamp=timestamp, data_type=data_type)
