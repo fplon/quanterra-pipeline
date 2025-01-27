@@ -17,12 +17,13 @@ class LoggerConfig:
         return cls._instance
 
     def __init__(self) -> None:
-        # Create logs directory if it doesn't exist
-        Path("logs").mkdir(exist_ok=True)
+        if not LoggerConfig._initialised:
+            # Create logs directory if it doesn't exist
+            Path("logs").mkdir(exist_ok=True)
 
     def configure(self, app_name: str = "app") -> None:
         """Configure logger with settings for specific app component."""
-        if not self._initialised:
+        if not LoggerConfig._initialised:
             # Remove default handler
             logger.remove()
 
@@ -48,7 +49,7 @@ class LoggerConfig:
                 diagnose=True,
             )
 
-            self._initialised = True
+            LoggerConfig._initialised = True
 
 
 def setup_logger(app_name: str) -> None:

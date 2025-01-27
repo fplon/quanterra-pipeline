@@ -32,12 +32,20 @@ class EODHDSettings:
 
 
 @dataclass
+class YahooFinanceSettings:
+    """Yahoo Finance provider settings."""
+
+    tickers: list[str]
+
+
+@dataclass
 class Settings:
     """Application settings."""
 
     env: str
     gcp: GCPSettings
     eodhd: EODHDSettings
+    yahoo_finance: YahooFinanceSettings
 
     @classmethod
     def load(cls, env: str = "dev") -> "Settings":
@@ -77,7 +85,13 @@ class Settings:
             include_delisted=eodhd_config.get("include_delisted", False),
         )
 
-        return cls(env=env, gcp=gcp, eodhd=eodhd)
+        # Create Yahoo Finance settings
+        yahoo_finance_config = config.get("providers", {}).get("yahoo_finance", {})
+        yahoo_finance = YahooFinanceSettings(
+            tickers=yahoo_finance_config.get("tickers", []),
+        )
+
+        return cls(env=env, gcp=gcp, eodhd=eodhd, yahoo_finance=yahoo_finance)
 
     # TODO this should be a method on the provider service
     def get_provider_instruments(self, provider: str) -> list[tuple[str, str]]:

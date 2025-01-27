@@ -20,3 +20,8 @@ providers:
         - "gdp_growth_annual"
     asset_types: ["ETF", "FUND"]  # for exchange symbols endpoint
     include_delisted: false
+  yahoo_finance:
+    tickers:
+      - 0P0000XYZ1.L
+      - 0P000102MS.L
+      - 0P0000KSPA.L
