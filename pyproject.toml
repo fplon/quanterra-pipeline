@@ -1,7 +1,28 @@
 [project]
 name = "quanterra-pipeline"
 version = "0.1.0"
-description = "Add your description here"
+description = "Data pipeline for Quanterra data lake"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "google-cloud-storage>=2.19.0",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "pandas>=2.2.3",
+    "python-dotenv>=1.0.1",
+    "pyyaml>=6.0.2",
+    "tenacity>=9.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.14.1",
+    "pytest>=8.3.4",
+    "pytest-asyncio>=0.25.2",
+    "ruff>=0.9.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [".","src"]
+testpaths = ["tests"]
+addopts = "-s -v"

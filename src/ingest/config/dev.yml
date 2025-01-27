@@ -1,0 +1,22 @@
+gcp:
+  project_id: ${GCP_PROJECT_ID}
+  bucket_name: ${GCP_BUCKET_NAME}
+  credentials_path: ${GCP_CREDENTIALS_PATH}
+
+providers:
+  eodhd:
+    api_key: ${EODHD_API_KEY}
+    base_url: ${EODHD_BASE_URL}
+    exchanges: ["EUFUND", "INDX"]
+    instruments:
+      - GB00B9876293.EUFUND
+      - GB00BG0QPQ07.EUFUND
+      - IXIC.INDX
+    macro_indicators:
+      countries: ["GBR", "USA"]
+      indicators:
+        - "unemployment_total_percent"
+        - "inflation_consumer_prices_annual"
+        - "gdp_growth_annual"
+    asset_types: ["ETF", "FUND"]  # for exchange symbols endpoint
+    include_delisted: false

@@ -11,3 +11,10 @@ wheels/
 
 # IDE
 .vscode/
+
+# env
+.env
+
+# app
+.notes/
+logs/
