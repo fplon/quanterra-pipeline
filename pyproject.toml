@@ -12,11 +12,13 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "pyyaml>=6.0.2",
     "tenacity>=9.0.0",
+    "yfinance>=0.2.52",
 ]
 
 [dependency-groups]
 dev = [
     "mypy>=1.14.1",
+    "pandas-stubs>=2.2.3.241126",
     "pytest>=8.3.4",
     "pytest-asyncio>=0.25.2",
     "ruff>=0.9.3",

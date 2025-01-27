@@ -101,7 +101,7 @@ class TestGCPStorageClient:
     def test_store_json_data_without_initialisation(self, reset_singleton: None) -> None:
         """Test that attempting to store data without initialisation raises an error."""
         client = GCPStorageClient()
-        client._client = None  # Force uninitialized state
+        client._client = None  # Force uninitialised state
 
         with pytest.raises(RuntimeError, match="GCP Storage client not initialised"):
             client.store_json_data({"key": "value"}, "bucket", "path.json")
