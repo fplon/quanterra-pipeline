@@ -2,8 +2,8 @@ from loguru import logger
 
 from src.common.logging.config import setup_logger
 from src.ingest.config.settings import get_settings
-from src.ingest.providers.eodhd.factory import EODHDProcessorFactory, ProcessorType
-from src.ingest.providers.eodhd.models import EODHDConfig
+from src.ingest.data_sources.eodhd.factory import EODHDProcessorFactory, ProcessorType
+from src.ingest.data_sources.eodhd.models import EODHDConfig
 
 
 async def run_eodhd_ingestion() -> None:

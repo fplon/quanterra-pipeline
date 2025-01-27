@@ -46,7 +46,7 @@ class GCPStorageClient:
         bucket = self._client.bucket(bucket_name)
         blob = bucket.blob(blob_path)
 
-        # Serialize data
+        # Serialise data
         json_string = json.dumps(data)
 
         if compress:

@@ -6,8 +6,8 @@ from loguru import logger
 
 from src.common.gcp.client import GCPStorageClient
 from src.common.types import JSONType
-from src.ingest.providers.eodhd.client import EODHDClient
-from src.ingest.providers.eodhd.models import (
+from src.ingest.data_sources.eodhd.client import EODHDClient
+from src.ingest.data_sources.eodhd.models import (
     BaseEODHDData,
     EconomicEventData,
     EODHDConfig,
@@ -36,7 +36,7 @@ class EODIngestionProcessor(ABC):
     async def _store_data(self, data: BaseEODHDData, location: StorageLocation) -> None:
         """Store data in Google Cloud Storage."""
         if self.storage_client is None:
-            raise RuntimeError("Storage client not initialized")
+            raise RuntimeError("Storage client not initialised")
 
         self.storage_client.store_json_data(
             data=data.to_json(),

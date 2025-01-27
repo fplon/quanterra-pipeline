@@ -2,7 +2,7 @@ from typing import Mapping, Protocol, Sequence, TypeVar, Union
 
 
 class JSONValue(Protocol):
-    """Protocol for JSON-serializable values."""
+    """Protocol for JSON-serialisable values."""
 
     def __eq__(self, __other: object) -> bool: ...
 
