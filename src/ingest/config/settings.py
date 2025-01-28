@@ -45,6 +45,10 @@ class OANDASettings:
     api_key: str
     account_id: str
     base_url: str
+    granularity: str
+    count: int
+    price: str
+    instruments: list[str]
 
 
 @dataclass
@@ -107,6 +111,10 @@ class Settings:
             api_key=os.getenv("OANDA_API_KEY", oanda_config.get("api_key", "")),
             account_id=os.getenv("OANDA_ACCOUNT_ID", oanda_config.get("account_id", "")),
             base_url=os.getenv("OANDA_BASE_URL", oanda_config.get("base_url", "")),
+            granularity=oanda_config.get("granularity", "D"),
+            count=oanda_config.get("count", 1000),
+            price=oanda_config.get("price", "MBA"),
+            instruments=oanda_config.get("instruments", []),
         )
 
         return cls(env=env, gcp=gcp, eodhd=eodhd, yahoo_finance=yahoo_finance, oanda=oanda)

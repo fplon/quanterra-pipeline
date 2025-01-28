@@ -46,7 +46,7 @@ class TestLoggerConfig:
     def test_init_creates_logs_directory(
         self, reset_logger_config: None, mock_path: MagicMock
     ) -> None:
-        """Test that logs directory is created during initialization."""
+        """Test that logs directory is created during initialisation."""
         LoggerConfig()
         mock_path.assert_called_once_with("logs")
         mock_path.return_value.mkdir.assert_called_once_with(exist_ok=True)
