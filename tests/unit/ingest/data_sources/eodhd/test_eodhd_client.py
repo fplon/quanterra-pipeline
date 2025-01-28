@@ -23,6 +23,23 @@ def client() -> EODHDClient:
     return EODHDClient(api_key="test_key", base_url="https://test.com/api/v1/")
 
 
+def test_prepare_request_params(client: EODHDClient) -> None:
+    """Test parameter preparation."""
+    # Test with no params
+    params = client._prepare_request_params()
+    assert params == {"api_token": "test_key", "fmt": "json"}
+
+    # Test with existing params
+    params = client._prepare_request_params({"existing": "param"})
+    assert params == {"existing": "param", "api_token": "test_key", "fmt": "json"}
+
+
+def test_get_headers(client: EODHDClient) -> None:
+    """Test header preparation."""
+    headers = client._get_headers()
+    assert headers == {}
+
+
 async def test_make_request_success(client: EODHDClient, mock_response: MagicMock) -> None:
     """Test successful API request."""
     mock_client = AsyncMock()
@@ -35,6 +52,7 @@ async def test_make_request_success(client: EODHDClient, mock_response: MagicMoc
     mock_client.__aenter__.return_value.get.assert_called_once_with(
         "https://test.com/api/v1/test-endpoint",
         params={"param": "value", "api_token": "test_key", "fmt": "json"},
+        headers={},
     )
 
 

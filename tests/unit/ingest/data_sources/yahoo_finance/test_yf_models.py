@@ -24,7 +24,7 @@ class TestYahooFinanceConfig:
     """Test suite for YahooFinanceConfig."""
 
     def test_init(self) -> None:
-        """Test initialization of YahooFinanceConfig."""
+        """Test initialisation of YahooFinanceConfig."""
         config = YahooFinanceConfig(bucket_name="test-bucket", tickers=["AAPL", "MSFT"])
         assert config.bucket_name == "test-bucket"
         assert config.tickers == ["AAPL", "MSFT"]
@@ -34,7 +34,7 @@ class TestStorageLocation:
     """Test suite for StorageLocation."""
 
     def test_init(self) -> None:
-        """Test initialization of StorageLocation."""
+        """Test initialisation of StorageLocation."""
         location = StorageLocation(bucket="test-bucket", path="test/path")
         assert location.bucket == "test-bucket"
         assert location.path == "test/path"
@@ -49,7 +49,7 @@ class TestYahooFinanceData:
         return {"test": "data"}
 
     def test_init(self, sample_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test initialization of YahooFinanceData."""
+        """Test initialisation of YahooFinanceData."""
         data = YahooFinanceData(
             data=sample_data,
             timestamp=sample_timestamp,
@@ -82,7 +82,7 @@ class TestTickerData:
         }
 
     def test_init(self, sample_ticker_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test initialization of TickerData."""
+        """Test initialisation of TickerData."""
         data = TickerData(
             data=sample_ticker_data,
             timestamp=sample_timestamp,
@@ -118,7 +118,7 @@ class TestMarketData:
         }
 
     def test_init(self, sample_market_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test initialization of MarketData."""
+        """Test initialisation of MarketData."""
         data = MarketData(
             data=sample_market_data,
             timestamp=sample_timestamp,

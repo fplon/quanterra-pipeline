@@ -39,6 +39,19 @@ class YahooFinanceSettings:
 
 
 @dataclass
+class OANDASettings:
+    """OANDA provider settings."""
+
+    api_key: str
+    account_id: str
+    base_url: str
+    granularity: str
+    count: int
+    price: str
+    instruments: list[str]
+
+
+@dataclass
 class Settings:
     """Application settings."""
 
@@ -46,6 +59,7 @@ class Settings:
     gcp: GCPSettings
     eodhd: EODHDSettings
     yahoo_finance: YahooFinanceSettings
+    oanda: OANDASettings
 
     @classmethod
     def load(cls, env: str = "dev") -> "Settings":
@@ -91,19 +105,19 @@ class Settings:
             tickers=yahoo_finance_config.get("tickers", []),
         )
 
-        return cls(env=env, gcp=gcp, eodhd=eodhd, yahoo_finance=yahoo_finance)
+        # Create OANDA settings
+        oanda_config = config.get("providers", {}).get("oanda", {})
+        oanda = OANDASettings(
+            api_key=os.getenv("OANDA_API_KEY", oanda_config.get("api_key", "")),
+            account_id=os.getenv("OANDA_ACCOUNT_ID", oanda_config.get("account_id", "")),
+            base_url=os.getenv("OANDA_BASE_URL", oanda_config.get("base_url", "")),
+            granularity=oanda_config.get("granularity", "D"),
+            count=oanda_config.get("count", 1000),
+            price=oanda_config.get("price", "MBA"),
+            instruments=oanda_config.get("instruments", []),
+        )
 
-    # TODO this should be a method on the provider service
-    def get_provider_instruments(self, provider: str) -> list[tuple[str, str]]:
-        """Get list of exchange/instrument pairs for a provider."""
-        provider_config = getattr(self, provider)
-        return [tuple(instrument.split(".", 1)) for instrument in provider_config.instruments]
-
-    # TODO this should be a method on the provider service
-    def get_provider_exchanges(self, provider: str) -> list[str]:
-        """Get list of exchanges for a provider."""
-        provider_config = getattr(self, provider)
-        return [exchange for exchange in provider_config.exchanges]
+        return cls(env=env, gcp=gcp, eodhd=eodhd, yahoo_finance=yahoo_finance, oanda=oanda)
 
 
 # Global settings instance
