@@ -1,49 +1,50 @@
 from loguru import logger
 
+from src.common.config import load_yaml_config, resolve_env_vars
 from src.common.logging.config import setup_logger
-from src.ingest.config.settings import get_settings
-from src.ingest.data_sources.oanda.factory import OANDAProcessorFactory, ProcessorType
+from src.ingest.core.manifest import PipelineManifest, ProcessorType
+from src.ingest.core.pipeline import Pipeline
+from src.ingest.core.processor import BaseProcessor
+from src.ingest.data_sources.oanda.factory import OANDAProcessorFactory
 from src.ingest.data_sources.oanda.models import OANDAConfig
 
 
 async def run_oanda_ingestion() -> None:
-    """Run OANDA data ingestion for all configured instruments."""
+    """Run OANDA data ingestion pipeline."""
     try:
         # Initialise logger for OANDA component
         setup_logger("oanda")
         logger.info("Starting OANDA data ingestion")
 
-        # Get settings
-        settings = get_settings()
+        # Load and parse manifest
+        manifest_path = "src/ingest/config/manifests/oanda.yml"
+        raw_manifest = load_yaml_config(manifest_path)
+        manifest = PipelineManifest.model_validate(resolve_env_vars(raw_manifest))
 
-        # Create OANDA config
-        oanda_config = OANDAConfig(
-            api_key=settings.oanda.api_key,
-            base_url=settings.oanda.base_url,
-            bucket_name=settings.gcp.bucket_name,
-            account_id=settings.oanda.account_id,
-            instruments=settings.oanda.instruments,
-            granularity=settings.oanda.granularity,
-            count=settings.oanda.count,
-            price=settings.oanda.price,
-        )
-
-        # Initialise processor factory
+        # Create processor factory
         factory = OANDAProcessorFactory()
 
-        # Process instruments data
-        instruments_processor = factory.create_processor(ProcessorType.INSTRUMENTS, oanda_config)
-        await instruments_processor.process()
+        # Create processors from manifest
+        processors: list[BaseProcessor] = []
+        for proc_manifest in manifest.processors:
+            processor = factory.create_processor(
+                processor_type=ProcessorType(proc_manifest.type),
+                config=OANDAConfig(**manifest.settings),
+            )
+            processors.append(processor)
 
-        if not oanda_config.instruments:
-            logger.warning("No instruments configured for OANDA data ingestion")
-            # TODO - parse instruments from output of instruments processor
+        # Create and execute pipeline
+        pipeline = Pipeline(name=manifest.name, processors=processors)
 
-        # Process candles data
-        candles_processor = factory.create_processor(ProcessorType.CANDLES, oanda_config)
-        await candles_processor.process()
+        context = await pipeline.execute()
 
-        logger.success("OANDA data ingestion completed successfully")
+        if not context.end_time:
+            raise RuntimeError("Pipeline failed to complete")
+
+        logger.success(
+            f"Pipeline completed in {(context.end_time - context.start_time).total_seconds():.2f}s"
+        )
+
     except Exception:
         logger.exception("Fatal error in OANDA ingestion")
         raise

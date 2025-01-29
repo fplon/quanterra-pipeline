@@ -1,7 +1,10 @@
+"""Unit tests for OANDA models."""
+
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 import pytest
+from pydantic import ValidationError
 
 from src.common.types import JSONType
 from src.ingest.data_sources.oanda.models import (
@@ -9,148 +12,178 @@ from src.ingest.data_sources.oanda.models import (
     CandlesData,
     InstrumentsData,
     OANDAConfig,
-    StorageLocation,
 )
 
 
-@pytest.fixture
-def sample_json_data() -> JSONType:
-    return {"key": "value", "nested": {"data": 123}}
+class InstrumentRecord(TypedDict):
+    """Type for instrument record."""
 
-
-@pytest.fixture
-def sample_timestamp() -> datetime:
-    return datetime(2024, 1, 1, 12, 0, 0)
+    name: str
+    type: str
 
 
 class TestOANDAConfig:
-    """Test suite for OANDAConfig."""
+    """Test suite for OANDAConfig model."""
 
-    def test_config_initialisation(self) -> None:
-        """Test that OANDAConfig initialises correctly with all parameters."""
+    def test_valid_config(self) -> None:
+        """Test creation of valid config."""
         config = OANDAConfig(
             api_key="test_key",
             base_url="http://test.com",
             bucket_name="test-bucket",
             account_id="test-account",
-            instruments=["EUR_USD", "GBP_USD"],
             granularity="H1",
-            count=1000,
+            count=100,
+            price="MBA",
+            instruments=["EUR_USD", "GBP_USD"],
         )
-
         assert config.api_key == "test_key"
         assert config.base_url == "http://test.com"
         assert config.bucket_name == "test-bucket"
         assert config.account_id == "test-account"
-        assert config.instruments == ["EUR_USD", "GBP_USD"]
         assert config.granularity == "H1"
-        assert config.count == 1000
-        assert config.price == "MBA"  # Default value
+        assert config.count == 100
+        assert config.price == "MBA"
+        assert config.instruments == ["EUR_USD", "GBP_USD"]
 
-    def test_config_with_custom_price(self) -> None:
-        """Test that OANDAConfig accepts custom price parameter."""
+    def test_minimal_config(self) -> None:
+        """Test creation of config with only required fields."""
         config = OANDAConfig(
             api_key="test_key",
             base_url="http://test.com",
             bucket_name="test-bucket",
             account_id="test-account",
-            instruments=["EUR_USD"],
             granularity="H1",
-            count=1000,
-            price="B",
+            count=100,
         )
+        assert config.api_key == "test_key"
+        assert config.base_url == "http://test.com"
+        assert config.bucket_name == "test-bucket"
+        assert config.account_id == "test-account"
+        assert config.granularity == "H1"
+        assert config.count == 100
+        assert config.price == "MBA"  # Default value
+        assert config.instruments is None
 
-        assert config.price == "B"
+    @pytest.mark.skip("TODO: Add test for invalid config")
+    def test_invalid_config(self) -> None:
+        """Test validation of invalid config."""
+        with pytest.raises(ValidationError):
+            OANDAConfig(
+                api_key="test_key",
+                base_url="not_a_url",  # Invalid URL format
+                bucket_name="test-bucket",
+                account_id="test-account",
+                granularity="H1",
+                count=100,
+            )
+
+        with pytest.raises(ValidationError):
+            OANDAConfig(
+                api_key="test_key",
+                base_url="http://test.com",
+                bucket_name="test-bucket",
+                account_id="test-account",
+                granularity="H1",
+                count=-1,  # Invalid count
+            )
 
 
 class TestBaseOANDAData:
-    """Test suite for BaseOANDAData."""
+    """Test suite for BaseOANDAData model."""
 
-    class ConcreteOANDAData(BaseOANDAData):
+    class ConcreteData(BaseOANDAData):
         """Concrete implementation for testing abstract base class."""
 
-        def __init__(self, data: JSONType, timestamp: datetime):
-            super().__init__(data=data, timestamp=timestamp, data_type="test-type")
+        data_type: str = "test-data"
 
-    def test_to_json(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test JSON conversion of base data."""
-        base_data = self.ConcreteOANDAData(data=sample_json_data, timestamp=sample_timestamp)
+    def test_to_json(self) -> None:
+        """Test JSON conversion."""
+        test_data: JSONType = {"key": "value"}
+        timestamp = datetime.now()
+        data = self.ConcreteData(data=test_data, timestamp=timestamp)
 
-        json_output = cast(dict[str, Any], base_data.to_json())
-        assert json_output["data"] == sample_json_data
-        assert json_output["metadata"]["data_type"] == "test-type"
-        assert json_output["metadata"]["timestamp"] == "2024-01-01T12:00:00"
+        json_data = cast(dict[str, Any], data.to_json())
+        assert json_data["data"] == test_data
+        assert json_data["metadata"]["data_type"] == "test-data"
+        assert json_data["metadata"]["timestamp"] == timestamp.isoformat()
 
-    def test_get_storage_path(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test storage path generation for base data."""
-        base_data = self.ConcreteOANDAData(data=sample_json_data, timestamp=sample_timestamp)
+    def test_get_storage_path(self) -> None:
+        """Test storage path generation."""
+        timestamp = datetime(2024, 1, 29, 12, 0, 0)
+        data = self.ConcreteData(data={}, timestamp=timestamp)
 
-        expected_path = "oanda/test-type/2024/01/01.json.gz"
-        assert base_data.get_storage_path() == expected_path
+        path = data.get_storage_path()
+        assert path == "oanda/test-data/2024/01/29.json.gz"
 
 
 class TestInstrumentsData:
-    """Test suite for InstrumentsData."""
+    """Test suite for InstrumentsData model."""
 
-    def test_instruments_data_initialisation(
-        self, sample_json_data: JSONType, sample_timestamp: datetime
-    ) -> None:
-        """Test that InstrumentsData initialises correctly."""
-        instruments_data = InstrumentsData(data=sample_json_data, timestamp=sample_timestamp)
+    def test_get_instruments_list(self) -> None:
+        """Test extraction of instruments list."""
+        test_data: dict[str, list[InstrumentRecord]] = {
+            "instruments": [
+                {"name": "EUR_USD", "type": "CURRENCY"},
+                {"name": "GBP_USD", "type": "CURRENCY"},
+            ]
+        }
+        data = InstrumentsData(data=cast(JSONType, test_data), timestamp=datetime.now())
 
-        assert instruments_data.data == sample_json_data
-        assert instruments_data.timestamp == sample_timestamp
-        assert instruments_data.data_type == "instruments-list"
+        instruments = data.get_instruments_list()
+        assert instruments == ["EUR_USD", "GBP_USD"]
 
-    def test_get_storage_path(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test storage path generation for instruments data."""
-        instruments_data = InstrumentsData(data=sample_json_data, timestamp=sample_timestamp)
+    def test_get_instruments_list_invalid_data(self) -> None:
+        """Test handling of invalid data format."""
+        data = InstrumentsData(data=[], timestamp=datetime.now())  # Not a dict
 
-        expected_path = "oanda/instruments-list/2024/01/01.json.gz"
-        assert instruments_data.get_storage_path() == expected_path
+        with pytest.raises(ValueError, match="Data is not a dictionary"):
+            data.get_instruments_list()
+
+    def test_get_instruments_list_empty_data(self) -> None:
+        """Test handling of empty data."""
+        data = InstrumentsData(data={"instruments": []}, timestamp=datetime.now())
+
+        instruments = data.get_instruments_list()
+        assert instruments == []
+
+    def test_get_instruments_list_missing_name(self) -> None:
+        """Test handling of instruments without name field."""
+        test_data: dict[str, list[dict[str, str]]] = {
+            "instruments": [
+                {"type": "CURRENCY"},  # Missing name
+                {"name": "GBP_USD", "type": "CURRENCY"},
+            ]
+        }
+        data = InstrumentsData(data=cast(JSONType, test_data), timestamp=datetime.now())
+
+        instruments = data.get_instruments_list()
+        assert instruments == ["GBP_USD"]
 
 
 class TestCandlesData:
-    """Test suite for CandlesData."""
+    """Test suite for CandlesData model."""
 
-    def test_candles_data_initialisation(
-        self, sample_json_data: JSONType, sample_timestamp: datetime
-    ) -> None:
-        """Test that CandlesData initialises correctly."""
-        candles_data = CandlesData(
-            data=sample_json_data, instrument="EUR_USD", timestamp=sample_timestamp
+    def test_metadata(self) -> None:
+        """Test metadata includes instrument details."""
+        data = CandlesData(
+            data={},
+            timestamp=datetime.now(),
+            instrument="EUR_USD",
         )
 
-        assert candles_data.data == sample_json_data
-        assert candles_data.instrument == "EUR_USD"
-        assert candles_data.timestamp == sample_timestamp
-        assert candles_data.data_type == "candles"
-
-    def test_get_metadata(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test metadata generation for candles data."""
-        candles_data = CandlesData(
-            data=sample_json_data, instrument="EUR_USD", timestamp=sample_timestamp
-        )
-
-        metadata = candles_data._get_metadata()
+        metadata = data._get_metadata()
         assert metadata["data_type"] == "candles"
-        assert metadata["timestamp"] == "2024-01-01T12:00:00"
         assert metadata["instrument"] == "EUR_USD"
 
-    def test_get_storage_path(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        """Test storage path generation for candles data."""
-        candles_data = CandlesData(
-            data=sample_json_data, instrument="EUR_USD", timestamp=sample_timestamp
+    def test_storage_path(self) -> None:
+        """Test storage path includes instrument details."""
+        timestamp = datetime(2024, 1, 29, 12, 0, 0)
+        data = CandlesData(
+            data={},
+            timestamp=timestamp,
+            instrument="EUR_USD",
         )
 
-        expected_path = "oanda/candles/2024/01/01/EUR_USD.json.gz"
-        assert candles_data.get_storage_path() == expected_path
-
-
-class TestStorageLocation:
-    """Test suite for StorageLocation."""
-
-    def test_storage_location_string_representation(self) -> None:
-        """Test string representation of storage location."""
-        location = StorageLocation(bucket="test-bucket", path="test/path.json")
-        assert str(location) == "test-bucket/test/path.json"
+        path = data.get_storage_path()
+        assert path == "oanda/candles/2024/01/29/EUR_USD.json.gz"

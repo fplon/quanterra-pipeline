@@ -1,11 +1,14 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from datetime import datetime
 from typing import Awaitable, Callable
 
 from loguru import logger
 
 from src.common.gcp.client import GCPStorageClient
+from src.common.models import StorageLocation
 from src.common.types import JSONType
+from src.ingest.core.context import PipelineContext
+from src.ingest.core.processor import BaseProcessor
 from src.ingest.data_sources.eodhd.client import EODHDClient
 from src.ingest.data_sources.eodhd.models import (
     BaseEODHDData,
@@ -15,21 +18,23 @@ from src.ingest.data_sources.eodhd.models import (
     ExchangeSymbolData,
     InstrumentData,
     MacroData,
-    StorageLocation,
 )
 
 
-class EODIngestionProcessor(ABC):
+class EODIngestionProcessor(BaseProcessor):
     """Base processor for EODHD data ingestion."""
 
     def __init__(self, config: EODHDConfig):
         self.config = config
-        # TODO inject clients
         self.eodhd_client = EODHDClient(api_key=config.api_key, base_url=config.base_url)
         self.storage_client = GCPStorageClient()
 
+    @property
+    def name(self) -> str:
+        return self.__class__.__name__
+
     @abstractmethod
-    async def process(self) -> list[StorageLocation]:
+    async def process(self, context: PipelineContext) -> list[StorageLocation]:
         """Execute the ingestion process."""
         pass
 
@@ -49,7 +54,7 @@ class EODIngestionProcessor(ABC):
 class ExchangeDataProcessor(EODIngestionProcessor):
     """Processor for fetching and storing exchange-level data."""
 
-    async def process(self) -> list[StorageLocation]:
+    async def process(self, context: PipelineContext) -> list[StorageLocation]:
         logger.info("Processing exchange data")
         try:
             raw_data = await self.eodhd_client.get_exchanges()
@@ -60,6 +65,9 @@ class ExchangeDataProcessor(EODIngestionProcessor):
             location = StorageLocation(bucket=self.config.bucket_name, path=data.get_storage_path())
             await self._store_data(data, location)
             logger.success(f"Stored exchange data at: {location}")
+
+            # Store exchange data in context for downstream processors
+            context.shared_state["available_exchanges"] = data.get_exchanges_list()
             return [location]
         except Exception:
             logger.exception("Error processing exchange data")
@@ -69,9 +77,18 @@ class ExchangeDataProcessor(EODIngestionProcessor):
 class ExchangeSymbolDataProcessor(EODIngestionProcessor):
     """Processor for fetching and storing exchange-symbol data."""
 
-    async def process(self) -> list[StorageLocation]:
+    async def process(self, context: PipelineContext) -> list[StorageLocation]:
         locations = []
-        for exchange in self.config.exchanges:
+
+        # Use exchanges from context if available, otherwise use config
+        exchanges = (
+            context.shared_state.get("available_exchanges", [])
+            if not self.config.exchanges
+            else self.config.exchanges
+        )
+        context.shared_state["available_exchange_symbols"] = []
+
+        for exchange in exchanges:
             try:
                 logger.info(f"Processing exchange-symbol data for {exchange}")
                 raw_data = await self.eodhd_client.get_exchange_symbols(exchange)
@@ -85,6 +102,11 @@ class ExchangeSymbolDataProcessor(EODIngestionProcessor):
                 )
                 await self._store_data(data, location)
                 logger.success(f"Stored exchange-symbol data at: {location}")
+
+                # Store exchange-symbol data in context for downstream processors
+                context.shared_state["available_exchange_symbols"].extend(
+                    data.get_exchange_symbols_list()
+                )
                 locations.append(location)
             except Exception:
                 logger.exception(f"Error processing exchange-symbol data for {exchange}")
@@ -105,7 +127,7 @@ class InstrumentDataProcessor(EODIngestionProcessor):
             "news": self.eodhd_client.get_news,
         }
 
-    async def process(self) -> list[StorageLocation]:
+    async def process(self, context: PipelineContext) -> list[StorageLocation]:
         locations = []
         instrument_pairs = [(i.split(".", 1)) for i in self.config.instruments]
 
@@ -145,7 +167,7 @@ class InstrumentDataProcessor(EODIngestionProcessor):
 class MacroDataProcessor(EODIngestionProcessor):
     """Processor for fetching and storing macroeconomic data."""
 
-    async def process(self) -> list[StorageLocation]:
+    async def process(self, context: PipelineContext) -> list[StorageLocation]:
         locations = []
         for indicator in self.config.macro_indicators:
             for iso_code in self.config.macro_countries:
@@ -175,7 +197,7 @@ class MacroDataProcessor(EODIngestionProcessor):
 class EconomicEventDataProcessor(EODIngestionProcessor):
     """Processor for fetching and storing economic event data."""
 
-    async def process(self) -> list[StorageLocation]:
+    async def process(self, context: PipelineContext) -> list[StorageLocation]:
         logger.info("Processing economic event data")
         try:
             raw_data = await self.eodhd_client.get_economic_events()

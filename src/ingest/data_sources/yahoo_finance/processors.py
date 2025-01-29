@@ -4,15 +4,17 @@ from loguru import logger
 
 from src.common.gcp.client import GCPStorageClient
 from src.common.json_utils import convert_to_json_safe
+from src.common.models import StorageLocation
+from src.ingest.core.context import PipelineContext
+from src.ingest.core.processor import BaseProcessor
 from src.ingest.data_sources.yahoo_finance.client import YahooFinanceClient
 from src.ingest.data_sources.yahoo_finance.models import (
-    StorageLocation,
     YahooFinanceConfig,
     YahooFinanceData,
 )
 
 
-class YahooFinanceProcessor:
+class YahooFinanceProcessor(BaseProcessor):
     """Processor for Yahoo Finance data."""
 
     def __init__(self, config: YahooFinanceConfig):
@@ -20,6 +22,10 @@ class YahooFinanceProcessor:
         self.config = config
         self.storage_client = GCPStorageClient()
         self.yf_client = YahooFinanceClient()
+
+    @property
+    def name(self) -> str:
+        return "YahooFinanceProcessor"
 
     def _store_data(self, data: YahooFinanceData, location: StorageLocation) -> None:
         """Store data in GCP bucket."""
@@ -30,10 +36,9 @@ class YahooFinanceProcessor:
             compress=True,
         )
 
-    async def process(self) -> list[StorageLocation]:
+    async def process(self, context: PipelineContext) -> list[StorageLocation]:
         """Process Yahoo Finance data."""
         locations = []
-
         try:
             with self.yf_client as client:
                 # Get ticker data

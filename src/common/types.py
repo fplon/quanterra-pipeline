@@ -1,4 +1,4 @@
-from typing import Mapping, Protocol, Sequence, TypeVar, Union
+from typing import Any, Dict, List, Protocol, TypeVar, Union
 
 
 class JSONValue(Protocol):
@@ -7,9 +7,11 @@ class JSONValue(Protocol):
     def __eq__(self, __other: object) -> bool: ...
 
 
+# Simple JSON primitive types
 JSONPrimitive = Union[str, int, float, bool, None]
-JSONObject = Mapping[str, "JSONType"]
-JSONArray = Sequence["JSONType"]
-JSONType = Union[JSONPrimitive, JSONObject, JSONArray]
+
+# Use Dict[str, Any] and List[Any] instead of recursive definitions
+# This avoids the infinite recursion while still maintaining type safety for JSON
+JSONType = Union[JSONPrimitive, Dict[str, Any], List[Any]]
 
 T = TypeVar("T", bound=JSONType)

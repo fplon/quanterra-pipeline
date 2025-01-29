@@ -57,3 +57,7 @@ class BaseAPIClient:
         except httpx.HTTPError as e:
             logger.error(f"HTTP error for {endpoint}: {str(e)}")
             raise
+
+        except Exception as e:
+            logger.error(f"Unexpected error for {endpoint}: {str(e)}")
+            raise

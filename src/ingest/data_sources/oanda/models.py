@@ -1,25 +1,24 @@
-from dataclasses import dataclass
 from datetime import datetime
+
+from pydantic import BaseModel
 
 from src.common.types import JSONType
 
 
-@dataclass
-class OANDAConfig:
+class OANDAConfig(BaseModel):
     """Configuration for OANDA data ingestion."""
 
     api_key: str
     base_url: str
     bucket_name: str
     account_id: str
-    instruments: list[str]
     granularity: str
     count: int
     price: str = "MBA"
+    instruments: list[str] | None = None
 
 
-@dataclass
-class BaseOANDAData:
+class BaseOANDAData(BaseModel):
     """Base class for all OANDA data types."""
 
     data: JSONType
@@ -46,23 +45,24 @@ class BaseOANDAData:
         return f"oanda/{self.data_type}/{date_str}.json.gz"
 
 
-@dataclass
 class InstrumentsData(BaseOANDAData):
     """Container for instruments list data."""
 
-    def __init__(self, data: JSONType, timestamp: datetime):
-        super().__init__(data=data, timestamp=timestamp, data_type="instruments-list")
+    data_type: str = "instruments-list"
+
+    def get_instruments_list(self) -> list[str]:
+        """Get the list of instruments from the data."""
+        if not isinstance(self.data, dict):
+            raise ValueError("Data is not a dictionary")
+        instruments = self.data.get("instruments", [])
+        return [inst.get("name", "") for inst in instruments if "name" in inst]  # type: ignore # FIXME - type hint
 
 
-@dataclass
 class CandlesData(BaseOANDAData):
     """Container for candles data."""
 
     instrument: str
-
-    def __init__(self, data: JSONType, instrument: str, timestamp: datetime):
-        super().__init__(data=data, timestamp=timestamp, data_type="candles")
-        self.instrument = instrument
+    data_type: str = "candles"
 
     def _get_metadata(self) -> dict[str, str]:
         metadata = super()._get_metadata()
@@ -72,14 +72,3 @@ class CandlesData(BaseOANDAData):
     def get_storage_path(self) -> str:
         date_str = self.timestamp.strftime("%Y/%m/%d")
         return f"oanda/{self.data_type}/{date_str}/{self.instrument}.json.gz"
-
-
-@dataclass
-class StorageLocation:
-    """Storage location details."""
-
-    bucket: str
-    path: str
-
-    def __str__(self) -> str:
-        return f"{self.bucket}/{self.path}"

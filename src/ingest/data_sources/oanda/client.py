@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import cast
 
 from src.common.types import JSONType
-from src.ingest.data_sources.base.client import BaseAPIClient
+from src.ingest.core.client import BaseAPIClient
 
 
 @dataclass
