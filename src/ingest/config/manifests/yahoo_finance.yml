@@ -1,0 +1,11 @@
+name: yahoo_finance_ingestion
+processors:
+  - type: yf_market
+    config: {}
+
+settings:
+  bucket_name: ${GCP_BUCKET_NAME}
+  tickers: 
+    - 0P0000XYZ1.L
+    - 0P000102MS.L
+    - 0P0000KSPA.L

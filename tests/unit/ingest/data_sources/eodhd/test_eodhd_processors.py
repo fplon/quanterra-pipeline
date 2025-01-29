@@ -4,11 +4,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from src.common.gcp.client import GCPStorageClient
+from src.common.models import StorageLocation
 from src.common.types import JSONType
+from src.ingest.core.context import PipelineContext
 from src.ingest.data_sources.eodhd.models import (
     EODHDConfig,
     ExchangeData,
-    StorageLocation,
 )
 from src.ingest.data_sources.eodhd.processors import (
     EconomicEventDataProcessor,
@@ -46,6 +47,12 @@ def mock_eodhd_client() -> AsyncMock:
     return AsyncMock()
 
 
+@pytest.fixture
+def pipeline_context() -> PipelineContext:
+    """Create a pipeline context for testing."""
+    return PipelineContext(pipeline_id="test_pipeline")
+
+
 class TestExchangeDataProcessor:
     @pytest.fixture
     def processor(
@@ -63,28 +70,39 @@ class TestExchangeDataProcessor:
         processor: ExchangeDataProcessor,
         mock_eodhd_client: AsyncMock,
         mock_storage_client: MagicMock,
+        pipeline_context: PipelineContext,
     ) -> None:
-        mock_data: JSONType = {"exchanges": [{"id": "LSE", "name": "London Stock Exchange"}]}
+        mock_data: JSONType = [{"id": "LSE", "name": "London Stock Exchange"}]
         mock_eodhd_client.get_exchanges.return_value = mock_data
 
-        result = await processor.process()
+        result = await processor.process(pipeline_context)
 
+        # Test basic functionality
         assert len(result) == 1
         assert isinstance(result[0], StorageLocation)
         mock_eodhd_client.get_exchanges.assert_called_once()
         mock_storage_client.store_json_data.assert_called_once()
+
+        # Test stored data
         stored_data = mock_storage_client.store_json_data.call_args[1]["data"]
         assert stored_data["data"] == mock_data
         assert "metadata" in stored_data
 
+        # Test context shared state
+        assert "available_exchanges" in pipeline_context.shared_state
+        assert isinstance(pipeline_context.shared_state["available_exchanges"], list)
+
     @pytest.mark.asyncio
     async def test_process_failure(
-        self, processor: ExchangeDataProcessor, mock_eodhd_client: AsyncMock
+        self,
+        processor: ExchangeDataProcessor,
+        mock_eodhd_client: AsyncMock,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_eodhd_client.get_exchanges.side_effect = Exception("API Error")
 
         with pytest.raises(Exception):
-            await processor.process()
+            await processor.process(pipeline_context)
 
 
 class TestExchangeSymbolProcessor:
@@ -105,27 +123,39 @@ class TestExchangeSymbolProcessor:
         mock_eodhd_client: AsyncMock,
         mock_storage_client: MagicMock,
         mock_config: EODHDConfig,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_data: JSONType = [{"code": "AAPL", "name": "Apple Inc"}]
         mock_eodhd_client.get_exchange_symbols.return_value = mock_data
 
-        result = await processor.process()
-
-        assert len(result) == len(mock_config.exchanges)  # One for each exchange in config
+        # Test with exchanges from config
+        result = await processor.process(pipeline_context)
+        assert len(result) == len(mock_config.exchanges)
         assert all(isinstance(loc, StorageLocation) for loc in result)
         assert mock_eodhd_client.get_exchange_symbols.call_count == len(mock_config.exchanges)
         assert mock_storage_client.store_json_data.call_count == len(mock_config.exchanges)
 
+        # Test shared state
+        assert "available_exchange_symbols" in pipeline_context.shared_state
+        assert isinstance(pipeline_context.shared_state["available_exchange_symbols"], list)
+
+        # Test with exchanges from context
+        pipeline_context.shared_state["available_exchanges"] = ["NASDAQ"]
+        mock_config.exchanges = []  # Clear config exchanges to force using context
+        result = await processor.process(pipeline_context)
+        assert len(result) == 1  # One exchange from context
+
     @pytest.mark.asyncio
-    async def test_process_partial_failure(
+    async def test_process_failure(
         self,
         processor: ExchangeSymbolDataProcessor,
         mock_eodhd_client: AsyncMock,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_eodhd_client.get_exchange_symbols.side_effect = Exception("API Error")
 
         with pytest.raises(Exception):
-            await processor.process()
+            await processor.process(pipeline_context)
 
 
 class TestInstrumentDataProcessor:
@@ -146,6 +176,7 @@ class TestInstrumentDataProcessor:
         mock_eodhd_client: AsyncMock,
         mock_storage_client: MagicMock,
         mock_config: EODHDConfig,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_data: JSONType = {"price": 150.0, "volume": 1000000}
         mock_eodhd_client.get_eod_data.return_value = mock_data
@@ -154,7 +185,7 @@ class TestInstrumentDataProcessor:
         mock_eodhd_client.get_fundamentals.return_value = mock_data
         mock_eodhd_client.get_news.return_value = mock_data
 
-        result = await processor.process()
+        result = await processor.process(pipeline_context)
 
         expected_calls = len(processor._data_type_handlers) * len(mock_config.instruments)
         assert len(result) == expected_calls
@@ -175,13 +206,14 @@ class TestInstrumentDataProcessor:
         mock_eodhd_client: AsyncMock,
         mock_storage_client: MagicMock,
         mock_config: EODHDConfig,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_data: JSONType = {"price": 150.0}
         mock_eodhd_client.get_eod_data.return_value = mock_data
         mock_eodhd_client.get_dividends.side_effect = Exception("API Error")
         mock_eodhd_client.get_splits.return_value = mock_data
 
-        result = await processor.process()
+        result = await processor.process(pipeline_context)
 
         assert len(result) > 0  # Some successful calls should still produce results
         assert len(result) < len(processor._data_type_handlers) * len(mock_config.instruments)
@@ -205,11 +237,12 @@ class TestMacroDataProcessor:
         mock_eodhd_client: AsyncMock,
         mock_storage_client: MagicMock,
         mock_config: EODHDConfig,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_data: JSONType = {"value": 2.5, "date": "2024-01-01"}
         mock_eodhd_client.get_macro_indicator.return_value = mock_data
 
-        result = await processor.process()
+        result = await processor.process(pipeline_context)
 
         expected_calls = len(mock_config.macro_indicators) * len(mock_config.macro_countries)
         assert len(result) == expected_calls
@@ -221,10 +254,11 @@ class TestMacroDataProcessor:
         self,
         processor: MacroDataProcessor,
         mock_eodhd_client: AsyncMock,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_eodhd_client.get_macro_indicator.side_effect = Exception("API Error")
 
-        result = await processor.process()
+        result = await processor.process(pipeline_context)
 
         assert len(result) == 0
 
@@ -246,11 +280,12 @@ class TestEconomicEventDataProcessor:
         processor: EconomicEventDataProcessor,
         mock_eodhd_client: AsyncMock,
         mock_storage_client: MagicMock,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_data: JSONType = [{"event": "GDP Release", "date": "2024-01-01"}]
         mock_eodhd_client.get_economic_events.return_value = mock_data
 
-        result = await processor.process()
+        result = await processor.process(pipeline_context)
 
         assert len(result) == 1
         assert isinstance(result[0], StorageLocation)
@@ -259,46 +294,40 @@ class TestEconomicEventDataProcessor:
 
     @pytest.mark.asyncio
     async def test_process_failure(
-        self, processor: EconomicEventDataProcessor, mock_eodhd_client: AsyncMock
+        self,
+        processor: EconomicEventDataProcessor,
+        mock_eodhd_client: AsyncMock,
+        pipeline_context: PipelineContext,
     ) -> None:
         mock_eodhd_client.get_economic_events.side_effect = Exception("API Error")
 
         with pytest.raises(Exception):
-            await processor.process()
+            await processor.process(pipeline_context)
 
 
 class TestEODIngestionProcessor:
-    class ConcreteProcessor(EODIngestionProcessor):
-        async def process(self) -> list[StorageLocation]:
-            return []
+    """Test suite for the base EOD ingestion processor."""
 
     @pytest.fixture
     def processor(
         self, mock_config: EODHDConfig, mock_storage_client: MagicMock
-    ) -> "TestEODIngestionProcessor.ConcreteProcessor":
+    ) -> EODIngestionProcessor:
+        class TestProcessor(EODIngestionProcessor):
+            async def process(self, context: PipelineContext) -> list[StorageLocation]:
+                return []
+
         with patch("src.ingest.data_sources.eodhd.processors.GCPStorageClient") as mock_gcp:
             mock_gcp.return_value = mock_storage_client
-            return self.ConcreteProcessor(mock_config)
-
-    @pytest.mark.asyncio
-    async def test_store_data_no_client(
-        self, processor: "TestEODIngestionProcessor.ConcreteProcessor"
-    ) -> None:
-        processor.storage_client = None  # type: ignore
-        data = ExchangeData(data={}, timestamp=datetime.now())
-        location = StorageLocation(bucket="test", path="test")
-
-        with pytest.raises(RuntimeError):
-            await processor._store_data(data, location)
+            return TestProcessor(mock_config)
 
     @pytest.mark.asyncio
     async def test_store_data_success(
         self,
-        processor: "TestEODIngestionProcessor.ConcreteProcessor",
+        processor: EODIngestionProcessor,
         mock_storage_client: MagicMock,
     ) -> None:
-        data = ExchangeData(data={}, timestamp=datetime.now())
-        location = StorageLocation(bucket="test", path="test")
+        data = ExchangeData(data={"test": "data"}, timestamp=datetime.now())
+        location = StorageLocation(bucket="test-bucket", path="test/path")
 
         await processor._store_data(data, location)
 

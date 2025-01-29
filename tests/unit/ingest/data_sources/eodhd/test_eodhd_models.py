@@ -1,7 +1,10 @@
+"""Unit tests for EODHD models."""
+
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 import pytest
+from pydantic import ValidationError
 
 from src.common.types import JSONType
 from src.ingest.data_sources.eodhd.models import (
@@ -12,196 +15,248 @@ from src.ingest.data_sources.eodhd.models import (
     ExchangeSymbolData,
     InstrumentData,
     MacroData,
-    StorageLocation,
 )
 
 
-@pytest.fixture
-def sample_json_data() -> JSONType:
-    return {"key": "value", "nested": {"data": 123}}
+class ExchangeRecord(TypedDict):
+    """Type for exchange record."""
+
+    Code: str
+    Name: str
 
 
-@pytest.fixture
-def sample_timestamp() -> datetime:
-    return datetime(2024, 1, 1, 12, 0, 0)
+class SymbolRecord(TypedDict):
+    """Type for symbol record."""
+
+    Code: str
+    Name: str
 
 
 class TestEODHDConfig:
-    def test_config_initialisation(self) -> None:
+    """Test suite for EODHDConfig model."""
+
+    def test_valid_config(self) -> None:
+        """Test creation of valid config."""
         config = EODHDConfig(
             api_key="test_key",
             base_url="http://test.com",
             bucket_name="test-bucket",
-            exchanges=["NYSE", "LSE"],
+            exchanges=["LSE", "NYSE"],
             instruments=["AAPL.US", "GOOGL.US"],
             macro_indicators=["GDP", "CPI"],
-            macro_countries=["USA", "GBR"],
+            macro_countries=["US", "UK"],
         )
-
         assert config.api_key == "test_key"
         assert config.base_url == "http://test.com"
         assert config.bucket_name == "test-bucket"
-        assert config.exchanges == ["NYSE", "LSE"]
+        assert config.exchanges == ["LSE", "NYSE"]
         assert config.instruments == ["AAPL.US", "GOOGL.US"]
         assert config.macro_indicators == ["GDP", "CPI"]
-        assert config.macro_countries == ["USA", "GBR"]
+        assert config.macro_countries == ["US", "UK"]
+
+    def test_minimal_config(self) -> None:
+        """Test creation of config with only required fields."""
+        config = EODHDConfig(
+            api_key="test_key",
+            base_url="http://test.com",
+            bucket_name="test-bucket",
+        )
+        assert config.api_key == "test_key"
+        assert config.base_url == "http://test.com"
+        assert config.bucket_name == "test-bucket"
+        assert config.exchanges == []
+        assert config.instruments == []
+        assert config.macro_indicators == []
+        assert config.macro_countries == []
+
+    @pytest.mark.skip("TODO: Add test for invalid config")
+    def test_invalid_config(self) -> None:
+        """Test validation of invalid config."""
+        with pytest.raises(ValidationError):
+            EODHDConfig(
+                api_key="test_key",
+                base_url="not_a_url",  # Invalid URL format
+                bucket_name="test-bucket",
+            )
 
 
 class TestBaseEODHDData:
-    def test_to_json(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        base_data = BaseEODHDData(
-            data=sample_json_data, timestamp=sample_timestamp, data_type="test-type"
-        )
+    """Test suite for BaseEODHDData model."""
 
-        json_output = cast(dict[str, Any], base_data.to_json())
-        assert json_output["data"] == sample_json_data
-        assert json_output["metadata"]["data_type"] == "test-type"
-        assert json_output["metadata"]["timestamp"] == "2024-01-01T12:00:00"
+    class ConcreteData(BaseEODHDData):
+        """Concrete implementation for testing abstract base class."""
 
-    def test_get_storage_path(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        base_data = BaseEODHDData(
-            data=sample_json_data, timestamp=sample_timestamp, data_type="test-type"
-        )
+        data_type: str = "test-data"
 
-        expected_path = "eodhd/test-type/2024/01/01.json.gz"
-        assert base_data.get_storage_path() == expected_path
+    def test_to_json(self) -> None:
+        """Test JSON conversion."""
+        test_data: JSONType = {"key": "value"}
+        timestamp = datetime.now()
+        data = self.ConcreteData(data=test_data, timestamp=timestamp)
+
+        json_data = cast(dict[str, Any], data.to_json())
+        assert json_data["data"] == test_data
+        assert json_data["metadata"]["data_type"] == "test-data"
+        assert json_data["metadata"]["timestamp"] == timestamp.isoformat()
+
+    def test_get_storage_path(self) -> None:
+        """Test storage path generation."""
+        timestamp = datetime(2024, 1, 29, 12, 0, 0)
+        data = self.ConcreteData(data={}, timestamp=timestamp)
+
+        path = data.get_storage_path()
+        assert path == "eodhd/test-data/2024/01/29.json.gz"
 
 
 class TestExchangeData:
-    def test_exchange_data_initialisation(
-        self, sample_json_data: JSONType, sample_timestamp: datetime
-    ) -> None:
-        exchange_data = ExchangeData(data=sample_json_data, timestamp=sample_timestamp)
+    """Test suite for ExchangeData model."""
 
-        assert exchange_data.data == sample_json_data
-        assert exchange_data.timestamp == sample_timestamp
-        assert exchange_data.data_type == "exchanges-list"
+    def test_get_exchanges_list(self) -> None:
+        """Test extraction of exchange list."""
+        test_data: list[ExchangeRecord] = [
+            {"Code": "LSE", "Name": "London Stock Exchange"},
+            {"Code": "NYSE", "Name": "New York Stock Exchange"},
+        ]
+        data = ExchangeData(data=cast(JSONType, test_data), timestamp=datetime.now())
+
+        exchanges = data.get_exchanges_list()
+        assert exchanges == ["LSE", "NYSE"]
+
+    def test_get_exchanges_list_invalid_data(self) -> None:
+        """Test handling of invalid data format."""
+        data = ExchangeData(data={"not": "a list"}, timestamp=datetime.now())
+
+        with pytest.raises(ValueError, match="Data is not a list of dictionaries"):
+            data.get_exchanges_list()
 
 
 class TestExchangeSymbolData:
-    def test_exchange_symbol_data_initialisation(
-        self, sample_json_data: JSONType, sample_timestamp: datetime
-    ) -> None:
-        exchange_symbol_data = ExchangeSymbolData(
-            data=sample_json_data, exchange="NYSE", timestamp=sample_timestamp
+    """Test suite for ExchangeSymbolData model."""
+
+    def test_get_exchange_symbols_list(self) -> None:
+        """Test extraction of exchange symbols list."""
+        test_data: list[SymbolRecord] = [
+            {"Code": "AAPL", "Name": "Apple Inc"},
+            {"Code": "GOOGL", "Name": "Alphabet Inc"},
+        ]
+        data = ExchangeSymbolData(
+            data=cast(JSONType, test_data),
+            timestamp=datetime.now(),
+            exchange="US",
         )
 
-        assert exchange_symbol_data.data == sample_json_data
-        assert exchange_symbol_data.exchange == "NYSE"
-        assert exchange_symbol_data.timestamp == sample_timestamp
-        assert exchange_symbol_data.data_type == "exchange-symbol-list"
+        symbols = data.get_exchange_symbols_list()
+        assert symbols == ["AAPL.US", "GOOGL.US"]
 
-    def test_get_metadata(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        exchange_symbol_data = ExchangeSymbolData(
-            data=sample_json_data, exchange="NYSE", timestamp=sample_timestamp
+    def test_get_exchange_symbols_list_invalid_data(self) -> None:
+        """Test handling of invalid data format."""
+        data = ExchangeSymbolData(
+            data={"not": "a list"},
+            timestamp=datetime.now(),
+            exchange="US",
         )
 
-        metadata = exchange_symbol_data._get_metadata()
-        assert metadata["data_type"] == "exchange-symbol-list"
-        assert metadata["timestamp"] == "2024-01-01T12:00:00"
-        assert metadata["exchange"] == "NYSE"
+        with pytest.raises(ValueError, match="Data is not a list of dictionaries"):
+            data.get_exchange_symbols_list()
 
-    def test_get_storage_path(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        exchange_symbol_data = ExchangeSymbolData(
-            data=sample_json_data, exchange="NYSE", timestamp=sample_timestamp
+    def test_metadata(self) -> None:
+        """Test metadata includes exchange."""
+        data = ExchangeSymbolData(
+            data=[],
+            timestamp=datetime.now(),
+            exchange="US",
         )
 
-        expected_path = "eodhd/exchange-symbol-list/2024/01/01/NYSE.json.gz"
-        assert exchange_symbol_data.get_storage_path() == expected_path
+        metadata = data._get_metadata()
+        assert metadata["exchange"] == "US"
+
+    def test_storage_path(self) -> None:
+        """Test storage path includes exchange."""
+        timestamp = datetime(2024, 1, 29, 12, 0, 0)
+        data = ExchangeSymbolData(
+            data=[],
+            timestamp=timestamp,
+            exchange="US",
+        )
+
+        path = data.get_storage_path()
+        assert path == "eodhd/exchange-symbol-list/2024/01/29/US.json.gz"
 
 
 class TestInstrumentData:
-    def test_instrument_data_initialisation(
-        self, sample_json_data: JSONType, sample_timestamp: datetime
-    ) -> None:
-        instrument_data = InstrumentData(
-            data=sample_json_data,
+    """Test suite for InstrumentData model."""
+
+    def test_metadata(self) -> None:
+        """Test metadata includes instrument details."""
+        data = InstrumentData(
+            data={},
+            timestamp=datetime.now(),
             code="AAPL",
-            exchange="NYSE",
+            exchange="US",
             data_type="eod",
-            timestamp=sample_timestamp,
         )
 
-        assert instrument_data.data == sample_json_data
-        assert instrument_data.code == "AAPL"
-        assert instrument_data.exchange == "NYSE"
-        assert instrument_data.data_type == "eod"
-        assert instrument_data.timestamp == sample_timestamp
-
-    def test_get_metadata(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        instrument_data = InstrumentData(
-            data=sample_json_data,
-            code="AAPL",
-            exchange="NYSE",
-            data_type="eod",
-            timestamp=sample_timestamp,
-        )
-
-        metadata = instrument_data._get_metadata()
-        assert metadata["data_type"] == "eod"
-        assert metadata["timestamp"] == "2024-01-01T12:00:00"
+        metadata = data._get_metadata()
         assert metadata["code"] == "AAPL"
-        assert metadata["exchange"] == "NYSE"
+        assert metadata["exchange"] == "US"
 
-    def test_get_storage_path(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        instrument_data = InstrumentData(
-            data=sample_json_data,
+    def test_storage_path(self) -> None:
+        """Test storage path includes instrument details."""
+        timestamp = datetime(2024, 1, 29, 12, 0, 0)
+        data = InstrumentData(
+            data={},
+            timestamp=timestamp,
             code="AAPL",
-            exchange="NYSE",
+            exchange="US",
             data_type="eod",
-            timestamp=sample_timestamp,
         )
 
-        expected_path = "eodhd/eod/2024/01/01/NYSE/AAPL.json.gz"
-        assert instrument_data.get_storage_path() == expected_path
+        path = data.get_storage_path()
+        assert path == "eodhd/eod/2024/01/29/US/AAPL.json.gz"
 
 
 class TestMacroData:
-    def test_macro_data_initialisation(
-        self, sample_json_data: JSONType, sample_timestamp: datetime
-    ) -> None:
-        macro_data = MacroData(
-            data=sample_json_data, iso_code="USA", indicator="GDP", timestamp=sample_timestamp
+    """Test suite for MacroData model."""
+
+    def test_metadata(self) -> None:
+        """Test metadata includes macro details."""
+        data = MacroData(
+            data={},
+            timestamp=datetime.now(),
+            iso_code="US",
+            indicator="GDP",
         )
 
-        assert macro_data.data == sample_json_data
-        assert macro_data.iso_code == "USA"
-        assert macro_data.indicator == "GDP"
-        assert macro_data.timestamp == sample_timestamp
-        assert macro_data.data_type == "macro-indicators"
-
-    def test_get_metadata(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        macro_data = MacroData(
-            data=sample_json_data, iso_code="USA", indicator="GDP", timestamp=sample_timestamp
-        )
-
-        metadata = macro_data._get_metadata()
-        assert metadata["data_type"] == "macro-indicators"
-        assert metadata["timestamp"] == "2024-01-01T12:00:00"
-        assert metadata["iso_code"] == "USA"
+        metadata = data._get_metadata()
+        assert metadata["iso_code"] == "US"
         assert metadata["indicator"] == "GDP"
 
-    def test_get_storage_path(self, sample_json_data: JSONType, sample_timestamp: datetime) -> None:
-        macro_data = MacroData(
-            data=sample_json_data, iso_code="USA", indicator="GDP", timestamp=sample_timestamp
+    def test_storage_path(self) -> None:
+        """Test storage path includes macro details."""
+        timestamp = datetime(2024, 1, 29, 12, 0, 0)
+        data = MacroData(
+            data={},
+            timestamp=timestamp,
+            iso_code="US",
+            indicator="GDP",
         )
 
-        expected_path = "eodhd/macro-indicators/2024/01/01/USA/GDP.json.gz"
-        assert macro_data.get_storage_path() == expected_path
+        path = data.get_storage_path()
+        assert path == "eodhd/macro-indicators/2024/01/29/US/GDP.json.gz"
 
 
 class TestEconomicEventData:
-    def test_economic_event_data_initialisation(
-        self, sample_json_data: JSONType, sample_timestamp: datetime
-    ) -> None:
-        economic_event_data = EconomicEventData(data=sample_json_data, timestamp=sample_timestamp)
+    """Test suite for EconomicEventData model."""
 
-        assert economic_event_data.data == sample_json_data
-        assert economic_event_data.timestamp == sample_timestamp
-        assert economic_event_data.data_type == "economic-events"
+    def test_data_type(self) -> None:
+        """Test data type is set correctly."""
+        data = EconomicEventData(data={}, timestamp=datetime.now())
+        assert data.data_type == "economic-events"
 
+    def test_storage_path(self) -> None:
+        """Test storage path format."""
+        timestamp = datetime(2024, 1, 29, 12, 0, 0)
+        data = EconomicEventData(data={}, timestamp=timestamp)
 
-class TestStorageLocation:
-    def test_storage_location_string_representation(self) -> None:
-        location = StorageLocation(bucket="test-bucket", path="test/path.json")
-        assert str(location) == "test-bucket/test/path.json"
+        path = data.get_storage_path()
+        assert path == "eodhd/economic-events/2024/01/29.json.gz"

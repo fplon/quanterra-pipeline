@@ -1,27 +1,18 @@
-from dataclasses import dataclass
 from datetime import datetime
+
+from pydantic import BaseModel
 
 from src.common.types import JSONType
 
 
-@dataclass
-class YahooFinanceConfig:
+class YahooFinanceConfig(BaseModel):
     """Configuration for Yahoo Finance data ingestion."""
 
     bucket_name: str
     tickers: list[str]
 
 
-@dataclass
-class StorageLocation:
-    """Storage location for data."""
-
-    bucket: str
-    path: str
-
-
-@dataclass
-class YahooFinanceData:
+class YahooFinanceData(BaseModel):
     """Base class for Yahoo Finance data."""
 
     data: JSONType
@@ -31,17 +22,15 @@ class YahooFinanceData:
     def get_storage_path(self) -> str:
         """Get the storage path for the data."""
         date_str = self.timestamp.strftime("%Y/%m/%d")
-        return f"yahoo_finance/{date_str}/{self.data_type}.json"
+        return f"yahoo_finance/{date_str}/{self.data_type}.json.gz"
 
 
-@dataclass
 class TickerData(YahooFinanceData):
     """Ticker data from Yahoo Finance."""
 
     pass
 
 
-@dataclass
 class MarketData(YahooFinanceData):
     """Market data from Yahoo Finance."""
 

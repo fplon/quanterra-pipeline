@@ -1,24 +1,23 @@
-from dataclasses import dataclass
 from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 from src.common.types import JSONType
 
 
-@dataclass
-class EODHDConfig:
+class EODHDConfig(BaseModel):
     """Configuration for EODHD provider."""
 
     api_key: str
     base_url: str
     bucket_name: str
-    exchanges: list[str]
-    instruments: list[str]
-    macro_indicators: list[str]
-    macro_countries: list[str]
+    exchanges: list[str] = Field(default_factory=list)
+    instruments: list[str] = Field(default_factory=list)
+    macro_indicators: list[str] = Field(default_factory=list)
+    macro_countries: list[str] = Field(default_factory=list)
 
 
-@dataclass
-class BaseEODHDData:
+class BaseEODHDData(BaseModel):
     """Base class for all EODHD data types."""
 
     data: JSONType
@@ -45,23 +44,23 @@ class BaseEODHDData:
         return f"eodhd/{self.data_type}/{date_str}.json.gz"
 
 
-@dataclass
 class ExchangeData(BaseEODHDData):
     """Container for exchange list data."""
 
-    def __init__(self, data: JSONType, timestamp: datetime):
-        super().__init__(data=data, timestamp=timestamp, data_type="exchanges-list")
+    data_type: str = "exchanges-list"
+
+    def get_exchanges_list(self) -> list[str]:
+        """Get the list of exchanges from the data."""
+        if not isinstance(self.data, list):
+            raise ValueError("Data is not a list of dictionaries (records)")
+        return [ex.get("Code", "") for ex in self.data if "Code" in ex]
 
 
-@dataclass
 class ExchangeSymbolData(BaseEODHDData):
     """Container for exchange symbol data."""
 
     exchange: str
-
-    def __init__(self, data: JSONType, exchange: str, timestamp: datetime):
-        super().__init__(data=data, timestamp=timestamp, data_type="exchange-symbol-list")
-        self.exchange = exchange
+    data_type: str = "exchange-symbol-list"
 
     def _get_metadata(self) -> dict[str, str]:
         metadata = super()._get_metadata()
@@ -72,25 +71,18 @@ class ExchangeSymbolData(BaseEODHDData):
         date_str = self.timestamp.strftime("%Y/%m/%d")
         return f"eodhd/{self.data_type}/{date_str}/{self.exchange}.json.gz"
 
+    def get_exchange_symbols_list(self) -> list[str]:
+        """Get the list of exchange symbols from the data"""
+        if not isinstance(self.data, list):
+            raise ValueError("Data is not a list of dictionaries (records)")
+        return [f"{ex.get('Code', '')}.{self.exchange}" for ex in self.data if "Code" in ex]
 
-@dataclass
+
 class InstrumentData(BaseEODHDData):
     """Container for instrument-specific data."""
 
     code: str
     exchange: str
-
-    def __init__(
-        self,
-        data: JSONType,
-        code: str,
-        exchange: str,
-        data_type: str,
-        timestamp: datetime,
-    ):
-        super().__init__(data=data, timestamp=timestamp, data_type=data_type)
-        self.code = code
-        self.exchange = exchange
 
     def _get_metadata(self) -> dict[str, str]:
         metadata = super()._get_metadata()
@@ -107,17 +99,12 @@ class InstrumentData(BaseEODHDData):
         return f"eodhd/{self.data_type}/{date_str}/{self.exchange}/{self.code}.json.gz"
 
 
-@dataclass
 class MacroData(BaseEODHDData):
     """Container for macroeconomic data."""
 
     iso_code: str
     indicator: str
-
-    def __init__(self, data: JSONType, iso_code: str, indicator: str, timestamp: datetime):
-        super().__init__(data=data, timestamp=timestamp, data_type="macro-indicators")
-        self.iso_code = iso_code
-        self.indicator = indicator
+    data_type: str = "macro-indicators"
 
     def _get_metadata(self) -> dict[str, str]:
         metadata = super()._get_metadata()
@@ -134,20 +121,7 @@ class MacroData(BaseEODHDData):
         return f"eodhd/{self.data_type}/{date_str}/{self.iso_code}/{self.indicator}.json.gz"
 
 
-@dataclass
 class EconomicEventData(BaseEODHDData):
     """Container for economic event data."""
 
-    def __init__(self, data: JSONType, timestamp: datetime):
-        super().__init__(data=data, timestamp=timestamp, data_type="economic-events")
-
-
-@dataclass
-class StorageLocation:
-    """Storage location details."""
-
-    bucket: str
-    path: str
-
-    def __str__(self) -> str:
-        return f"{self.bucket}/{self.path}"
+    data_type: str = "economic-events"

@@ -1,56 +1,49 @@
 from loguru import logger
 
+from src.common.config import load_yaml_config, resolve_env_vars
 from src.common.logging.config import setup_logger
-from src.ingest.config.settings import get_settings
-from src.ingest.data_sources.eodhd.factory import EODHDProcessorFactory, ProcessorType
+from src.ingest.core.manifest import PipelineManifest, ProcessorType
+from src.ingest.core.pipeline import Pipeline
+from src.ingest.core.processor import BaseProcessor
+from src.ingest.data_sources.eodhd.factory import EODHDProcessorFactory
 from src.ingest.data_sources.eodhd.models import EODHDConfig
 
 
 async def run_eodhd_ingestion() -> None:
-    """Run EODHD data ingestion for all configured instruments."""
+    """Run EODHD data ingestion pipeline."""
     try:
         # Initialise logger for EODHD component
         setup_logger("eodhd")
         logger.info("Starting EODHD data ingestion")
 
-        # Get settings
-        settings = get_settings()
+        # Load and parse manifest
+        manifest_path = "src/ingest/config/manifests/eodhd.yml"
+        raw_manifest = load_yaml_config(manifest_path)
+        manifest = PipelineManifest.model_validate(resolve_env_vars(raw_manifest))
 
-        # Create EODHD config
-        eodhd_config = EODHDConfig(
-            api_key=settings.eodhd.api_key,
-            base_url=settings.eodhd.base_url,
-            bucket_name=settings.gcp.bucket_name,
-            exchanges=settings.eodhd.exchanges,
-            instruments=settings.eodhd.instruments,
-            macro_indicators=settings.eodhd.macro_indicators["indicators"],
-            macro_countries=settings.eodhd.macro_indicators["countries"],
-        )
-
-        # Initialise service factory
+        # Create processor factory
         factory = EODHDProcessorFactory()
 
-        # Process exchange data
-        exchange_processor = factory.create_processor(ProcessorType.EXCHANGE, eodhd_config)
-        await exchange_processor.process()
+        # Create processors from manifest
+        processors: list[BaseProcessor] = []
+        for proc_manifest in manifest.processors:
+            processor = factory.create_processor(
+                processor_type=ProcessorType(proc_manifest.type),
+                config=EODHDConfig(**manifest.settings),
+            )
+            processors.append(processor)
 
-        # Process exchange symbol data
-        symbol_processor = factory.create_processor(ProcessorType.EXCHANGE_SYMBOL, eodhd_config)
-        await symbol_processor.process()
+        # Create and execute pipeline
+        pipeline = Pipeline(name=manifest.name, processors=processors)
+        context = await pipeline.execute()
 
-        # Process instrument data
-        instrument_processor = factory.create_processor(ProcessorType.INSTRUMENT, eodhd_config)
-        await instrument_processor.process()
+        if not context.end_time:
+            raise RuntimeError("Pipeline failed to complete")
 
-        # Process macroeconomic indicators data
-        macro_processor = factory.create_processor(ProcessorType.MACRO, eodhd_config)
-        await macro_processor.process()
+        logger.success(
+            f"Pipeline completed in {(context.end_time - context.start_time).total_seconds():.2f}s"
+        )
 
-        # Process economic events data
-        econ_events_processor = factory.create_processor(ProcessorType.ECONOMIC_EVENT, eodhd_config)
-        await econ_events_processor.process()
-
-        logger.success("EODHD data ingestion completed successfully")
     except Exception:
         logger.exception("Fatal error in EODHD ingestion")
         raise
