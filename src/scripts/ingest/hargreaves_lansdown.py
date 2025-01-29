@@ -5,31 +5,33 @@ from src.common.logging.config import setup_logger
 from src.ingest.config.settings import get_settings
 from src.ingest.core.manifest import PipelineManifest
 from src.ingest.core.pipeline import Pipeline
-from src.ingest.data_sources.interactive_investor.models import InteractiveInvestorConfig
-from src.ingest.data_sources.interactive_investor.processors import InteractiveInvestorProcessor
+from src.ingest.data_sources.hargreaves_lansdown.models import HargreavesLansdownConfig
+from src.ingest.data_sources.hargreaves_lansdown.processors import HargreavesLansdownProcessor
 
 
-async def run_interactive_investor_ingestion() -> None:
-    """Run Interactive Investor data ingestion pipeline."""
+async def run_hargreaves_lansdown_ingestion() -> None:
+    """Run Hargreaves Lansdown data ingestion pipeline."""
     try:
         # Initialise logger
-        setup_logger("interactive_investor")
-        logger.info("Starting Interactive Investor data ingestion")
+        setup_logger("hargreaves_lansdown")
+        logger.info("Starting Hargreaves Lansdown data ingestion")
 
         # Load and parse manifest
-        manifest_path = "src/ingest/config/manifests/interactive_investor.yml"
+        manifest_path = "src/ingest/config/manifests/hargreaves_lansdown.yml"
         raw_manifest = load_yaml_config(manifest_path)
         manifest = PipelineManifest.model_validate(resolve_env_vars(raw_manifest))
 
         # Create config
         settings = get_settings()
-        config = InteractiveInvestorConfig(
+        config = HargreavesLansdownConfig(
             bucket_name=settings.gcp.bucket_name,
-            source_path=manifest.settings["source_path"],
+            transactions_source_path=manifest.settings["transactions_source_path"],
+            positions_source_path=manifest.settings["positions_source_path"],
+            closed_positions_source_path=manifest.settings["closed_positions_source_path"],
         )
 
         # Create processor
-        processor = InteractiveInvestorProcessor(config=config)
+        processor = HargreavesLansdownProcessor(config=config)
 
         # Run pipeline
         pipeline = Pipeline(name=manifest.name, processors=[processor])
@@ -42,5 +44,5 @@ async def run_interactive_investor_ingestion() -> None:
             f"Pipeline completed in {(context.end_time - context.start_time).total_seconds():.2f}s"
         )
     except Exception:
-        logger.exception("Error running Interactive Investor ingestion pipeline")
+        logger.exception("Error running Hargreaves Lansdown ingestion pipeline")
         raise

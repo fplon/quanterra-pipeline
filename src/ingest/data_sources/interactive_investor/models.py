@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -14,7 +13,7 @@ class InteractiveInvestorConfig(BaseModel):
 class InteractiveInvestorTransaction(BaseModel):
     """Model for Interactive Investor transaction data."""
 
-    data: list[dict[str, Any]]
+    data: list[list[str]]
     timestamp: datetime = Field(default_factory=datetime.now)
 
     @model_validator(mode="after")
@@ -37,7 +36,7 @@ class InteractiveInvestorTransaction(BaseModel):
         if not self.data:
             raise ValueError("No data provided")
 
-        actual_columns = set(self.data[0].keys())
+        actual_columns = set(self.data[0])
         missing_columns = required_columns - actual_columns
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")

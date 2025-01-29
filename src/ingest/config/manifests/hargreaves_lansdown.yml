@@ -1,0 +1,10 @@
+name: hargreaves_lansdown_ingestion
+processors:
+  - type: hargreaves_lansdown
+    config: {}
+
+settings:
+  transactions_source_path: .notes/portfolio-summary.csv
+  positions_source_path: .notes/account-summary.csv
+  closed_positions_source_path: .notes/account-summary(1).csv
+  bucket_name: ${GCP_BUCKET_NAME}

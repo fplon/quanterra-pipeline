@@ -1,8 +1,7 @@
+import csv
 from abc import ABC, abstractmethod
-from csv import DictReader
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from loguru import logger
 
@@ -19,7 +18,7 @@ class BaseFileClient(ABC):
             raise FileNotFoundError(f"Source path does not exist: {self.source_path}")
 
     @abstractmethod
-    def preview_file(self) -> list[dict[str, Any]]:
+    def preview_file(self) -> list[list[str]]:
         """Read first few rows of the file for validation."""
         pass
 
@@ -35,13 +34,13 @@ class CSVFileClient(BaseFileClient):
 
     delimiter: str = ","
     encoding: str = "ISO-8859-1"
-    preview_rows: int = 5
+    preview_rows: int = 15
 
-    def preview_file(self) -> list[dict[str, Any]]:
-        """Read first few rows of CSV file for validation."""
+    def preview_file(self) -> list[list[str]]:
+        """Read first few rows of CSV file as raw rows."""
         try:
             with open(self.source_path, "r", encoding=self.encoding) as f:
-                reader = DictReader(f, delimiter=self.delimiter)
+                reader = csv.reader(f, delimiter=self.delimiter)
                 return [row for _, row in zip(range(self.preview_rows), reader)]
         except Exception as e:
             logger.error(f"Error reading CSV file {self.source_path}: {str(e)}")

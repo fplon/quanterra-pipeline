@@ -18,6 +18,8 @@ class ProcessorType(str, Enum):
     YF_MARKET = "yf_market"
     # Interactive Investor
     INTERACTIVE_INVESTOR = "interactive_investor"
+    # Hargreaves Lansdown
+    HARGREAVES_LANSDOWN = "hargreaves_lansdown"
 
 
 class ProcessorManifest(BaseModel):
