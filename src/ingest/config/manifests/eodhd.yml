@@ -34,4 +34,10 @@ settings:
   exchanges:
     - EUFUND
     - INDX
-
+  macro_countries:
+    - GBR
+    - USA
+  macro_indicators:
+    - unemployment_total_percent
+    - inflation_consumer_prices_annual
+    - gdp_growth_annual
