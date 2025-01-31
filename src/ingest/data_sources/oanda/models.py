@@ -55,7 +55,7 @@ class InstrumentsData(BaseOANDAData):
         if not isinstance(self.data, dict):
             raise ValueError("Data is not a dictionary")
         instruments = self.data.get("instruments", [])
-        return [inst.get("name", "") for inst in instruments if "name" in inst]  # type: ignore # FIXME - type hint
+        return [inst.get("name", "") for inst in instruments if "name" in inst]
 
 
 class CandlesData(BaseOANDAData):
