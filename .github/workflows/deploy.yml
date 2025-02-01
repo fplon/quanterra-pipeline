@@ -1,0 +1,52 @@
+name: Deploy Prefect Flow
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  GCP_REGION: '${{ secrets.GCP_REGION }}'
+  GCP_PROJECT: '${{ secrets.GCP_PROJECT_ID }}'
+  ARTIFACT_REGISTRY: '${{ secrets.GCP_ARTIFACT_REGISTRY }}'
+  IMAGE_NAME: '${{ secrets.IMAGE_NAME }}'
+  IMAGE_TAG: latest
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+    
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+    
+    - name: Configure Docker for GCP Artifact Registry
+      run: |
+        gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
+    
+    - name: Build and push Docker image
+      run: |
+        docker build -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+        docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    
+    - name: Deploy Prefect flow
+      run: |
+        docker run --rm \
+          -e PREFECT_API_KEY="${{ secrets.PREFECT_API_KEY }}" \
+          ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
+          prefect deploy \
+            --name "market_data_ingestion" \
+            --pool "market-data-pool" \
+            --cron "0 5 * * *" \
+            --version ${{ github.sha }} \
+            --infra docker-container \
+            --override image="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" \
+            src/flows/ingestion.py:market_data_ingestion_flow 
