@@ -47,6 +47,4 @@ jobs:
             --pool "market-data-pool" \
             --cron "0 5 * * *" \
             --version ${{ github.sha }} \
-            --infra docker-container \
-            --override image="${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}" \
             src/flows/ingestion.py:market_data_ingestion_flow 
