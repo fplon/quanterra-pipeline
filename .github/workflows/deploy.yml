@@ -44,7 +44,7 @@ jobs:
           ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
           prefect deploy \
             --name "market_data_ingestion" \
-            --pool "market-data-pool" \
+            --pool "quanterra-pool" \
             --cron "0 5 * * *" \
             --version ${{ github.sha }} \
             src/flows/ingestion.py:market_data_ingestion_flow 
