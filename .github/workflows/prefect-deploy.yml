@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/flows/**'
       - 'src/scripts/**'
-      - 'deployment.yaml'
+      - 'prefect.yaml'
       - 'Dockerfile'
   workflow_dispatch:
 
@@ -83,4 +83,4 @@ jobs:
       - name: Deploy Flow
         run: |
           source .venv/bin/activate
-          prefect deploy --name market-data-ingestion --all 
+          prefect deploy 
