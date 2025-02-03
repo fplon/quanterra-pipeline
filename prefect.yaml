@@ -19,7 +19,7 @@ build:
       tag: ${IMAGE_TAG}
       dockerfile: Dockerfile
       platform: linux/amd64
-      buildcontext: "."
+      context: "."
 
 push:
   - prefect_docker.deployments.steps.push_docker_image:
