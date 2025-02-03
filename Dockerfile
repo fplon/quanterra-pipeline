@@ -7,9 +7,11 @@ WORKDIR /quanterra-pipeline
 # Copy dependency files first for caching
 COPY pyproject.toml uv.lock ./
 
+# Create virtual environment first
+RUN uv venv .venv --linker copy
+
 # Install dependencies using UV
-RUN uv pip install --no-deps . -v && \
-    uv venv --seed --linker copy
+RUN .venv/bin/uv pip install --no-deps . -v
 
 # Install application
 COPY . .
