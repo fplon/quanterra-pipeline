@@ -5,18 +5,14 @@ build:
   - prefect_docker.deployments.steps.build_docker_image:
       id: build-image
       requires: prefect-docker
-      image_name: "{{ env.ARTIFACT_REGISTRY }}/{{ env.GCP_PROJECT_ID }}/{{ env.REPOSITORY }}/{{ env.IMAGE_NAME }}"
+      image_name: "europe-west2-docker.pkg.dev/quanterra/quanterra-docker/market-data-ingestion"
       tag: latest
 
 push:
   - prefect_docker.deployments.steps.push_docker_image:
       requires: prefect-docker
-      image_name: "{{ build-image.image_name }}"
-      tag: "{{ build-image.tag }}"
-
-pull:
-  - prefect_docker.images.pull_docker_image:
-      image: ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+      image_name: "europe-west2-docker.pkg.dev/quanterra/quanterra-docker/market-data-ingestion"
+      tag: "latest"
 
 deployments:
   - name: market-data-ingestion
