@@ -62,4 +62,4 @@ jobs:
       env:
         PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
         PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
-        PATH: ${{ github.workspace }}/.venv/bin:${{ env.PATH }} 
+        PATH: ${{ github.workspace }}/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
