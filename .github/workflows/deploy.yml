@@ -48,10 +48,14 @@ jobs:
     
     - name: Install Dependencies
       run: |
+        uv pip install --system "prefect>=3.1.15,<4.0.0" "prefect-docker>=0.6.2"
         uv sync --all-extras
     
     - name: Deploy Prefect Flow
       uses: PrefectHQ/actions-prefect-deploy@v3
+      with:
+        deployment-names: market_data_ingestion
+        deployment-file-path: ./prefect.yaml
       env:
         PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
         PREFECT_API_URL: ${{ env.PREFECT_API_URL }} 
