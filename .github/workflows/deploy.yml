@@ -48,8 +48,8 @@ jobs:
     
     - name: Install Dependencies
       run: |
-        uv tool install prefect>=3.1.15,<4.0.0
-        uv tool install prefect-docker>=0.6.2
+        uv pip install --system prefect ">=3.1.15,<4.0.0"
+        uv pip install --system prefect-docker ">=0.6.2"
         uv sync --all-extras
     
     - name: Deploy Prefect Flow
