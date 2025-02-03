@@ -11,6 +11,9 @@ env:
   ARTIFACT_REGISTRY: '${{ secrets.GCP_ARTIFACT_REGISTRY }}'
   IMAGE_NAME: '${{ secrets.IMAGE_NAME }}'
   IMAGE_TAG: latest
+  PREFECT_API_KEY: '${{ secrets.PREFECT_API_KEY }}'
+  PREFECT_ACCOUNT_ID: '${{ secrets.PREFECT_ACCOUNT_ID }}'
+  PREFECT_WORKSPACE_ID: 'default'
 
 jobs:
   deploy:
@@ -40,11 +43,13 @@ jobs:
     - name: Deploy Prefect flow
       run: |
         docker run --rm \
-          -e PREFECT_API_KEY="${{ secrets.PREFECT_API_KEY }}" \
+          -e PREFECT_API_KEY="${{ env.PREFECT_API_KEY }}" \
+          -e PREFECT_API_URL="https://api.prefect.cloud/api/accounts/${{ env.PREFECT_ACCOUNT_ID }}/workspaces/${{ env.PREFECT_WORKSPACE_ID }}" \
           ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
           prefect deploy \
             --name "market_data_ingestion" \
             --pool "quanterra-pool" \
+            --work-queue "default" \
             --cron "0 5 * * *" \
             --version ${{ github.sha }} \
             src/flows/ingestion.py:market_data_ingestion_flow 
