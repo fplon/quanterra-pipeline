@@ -32,11 +32,20 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Create and activate virtual environment
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+
       - name: Install uv
-        run: pip install uv
+        run: |
+          source .venv/bin/activate
+          pip install uv
 
       - name: Export requirements
-        run: uv pip freeze > requirements.txt
+        run: |
+          source .venv/bin/activate
+          uv pip freeze > requirements.txt
 
       - name: Google Auth
         uses: google-github-actions/auth@v2
@@ -56,14 +65,21 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Install Prefect
-        run: uv pip install prefect prefect-docker
+        run: |
+          source .venv/bin/activate
+          uv pip install prefect prefect-docker
 
       - name: Login to Prefect Cloud
-        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY }}
+        run: |
+          source .venv/bin/activate
+          prefect cloud login --key ${{ secrets.PREFECT_API_KEY }}
 
       - name: Create/Update Work Pool
         run: |
+          source .venv/bin/activate
           prefect work-pool create docker-pool --type docker || true
 
       - name: Deploy Flow
-        run: prefect deploy --name market-data-ingestion --all 
+        run: |
+          source .venv/bin/activate
+          prefect deploy --name market-data-ingestion --all 
