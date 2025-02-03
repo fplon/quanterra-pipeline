@@ -1,11 +1,18 @@
 name: market-data-ingestion
 prefect-version: 2.0
 
-build: null
+build:
+  - prefect_docker.deployments.steps.build_docker_image:
+      id: build-image
+      requires: prefect-docker
+      image_name: ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}
+      tag: latest
 
 push:
-  - prefect_docker.images.push_docker_image:
-      image: ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+  - prefect_docker.deployments.steps.push_docker_image:
+      requires: prefect-docker
+      image_name: "{{ build-image.image_name }}"
+      tag: "{{ build-image.tag }}"
 
 pull:
   - prefect_docker.images.pull_docker_image:
