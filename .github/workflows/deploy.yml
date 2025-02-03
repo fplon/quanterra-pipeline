@@ -48,8 +48,10 @@ jobs:
     
     - name: Install Dependencies
       run: |
-        uv pip install --system "prefect>=3.1.15,<4.0.0"
-        uv pip install --system "prefect-docker>=0.6.2"
+        uv venv .venv
+        source .venv/bin/activate
+        uv pip install "prefect>=3.1.15,<4.0.0"
+        uv pip install "prefect-docker>=0.6.2"
         uv sync --all-extras
     
     - name: Deploy Prefect Flow
@@ -59,4 +61,5 @@ jobs:
         deployment-file-path: ./prefect.yaml
       env:
         PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
-        PREFECT_API_URL: ${{ env.PREFECT_API_URL }} 
+        PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
+        PATH: ${{ github.workspace }}/.venv/bin:${{ env.PATH }} 
