@@ -1,0 +1,16 @@
+name: market-data-ingestion
+description: Market data ingestion flow for quanterra pipeline
+version: 1
+flow_name: market_data_ingestion
+entrypoint: src/flows/ingestion.py:market_data_ingestion_flow
+work_pool:
+  name: docker-pool
+  work_queue_name: default
+storage:
+  type: docker-container
+  image: europe-west2-docker.pkg.dev/your-project-id/prefect-flows/market-data-ingestion:latest
+schedule: null
+tags:
+  - production
+  - market-data
+  - ingestion 

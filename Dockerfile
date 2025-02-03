@@ -1,25 +1,27 @@
-# Use a Python image with uv pre-installed
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+FROM python:3.12-slim
 
-# Install the project into `/quanterra-pipeline`
-WORKDIR /quanterra-pipeline
+# Set working directory
+WORKDIR /app
 
-# Copy dependency files first for caching
-COPY pyproject.toml uv.lock ./
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create virtual environment first
-RUN uv venv .venv --linker copy
+# Install uv
+RUN pip install uv
 
-# Install dependencies using UV
-RUN .venv/bin/uv pip install --no-deps . -v
+# Copy requirements files
+COPY requirements.txt .
 
-# Install application
-COPY . .
-RUN uv pip install --no-deps . -v
+# Install Python dependencies using uv
+RUN uv pip install -r requirements.txt
 
-# Environment configuration
-ENV PATH="/quanterra-pipeline/.venv/bin:$PATH"
-ENV PYTHONPATH="/quanterra-pipeline"
+# Copy the project files
+COPY src/ ./src/
 
-# Run the ingestion flow
-CMD ["python", "-m", "src.flows.ingestion"] 
+# Set environment variables
+ENV PYTHONPATH=/app
+
+# Command to run the flow
+CMD ["python", "src/flows/ingestion.py"] 

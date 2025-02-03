@@ -1,0 +1,68 @@
+name: Deploy Prefect Flow
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/flows/**'
+      - 'src/scripts/**'
+      - 'deployment.yaml'
+      - 'Dockerfile'
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: europe-west2
+  ARTIFACT_REGISTRY: europe-west2-docker.pkg.dev
+  IMAGE_NAME: market-data-ingestion
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Export requirements
+        run: uv pip freeze > requirements.txt
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/prefect-flows/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/prefect-flows/${{ env.IMAGE_NAME }}:latest
+
+      - name: Install Prefect
+        run: uv pip install prefect prefect-docker
+
+      - name: Login to Prefect Cloud
+        run: prefect cloud login --key ${{ secrets.PREFECT_API_KEY }}
+
+      - name: Create/Update Work Pool
+        run: |
+          prefect work-pool create docker-pool --type docker || true
+
+      - name: Deploy Flow
+        run: prefect deploy --name market-data-ingestion --all 
