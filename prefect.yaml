@@ -5,7 +5,7 @@ build:
   - prefect_docker.deployments.steps.build_docker_image:
       id: build-image
       requires: prefect-docker
-      image_name: ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}
+      image_name: "{{ env.ARTIFACT_REGISTRY }}/{{ env.GCP_PROJECT_ID }}/{{ env.REPOSITORY }}/{{ env.IMAGE_NAME }}"
       tag: latest
 
 push:
