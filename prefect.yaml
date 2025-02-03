@@ -4,11 +4,11 @@ prefect-version: 2.0
 build: null
 
 push:
-  - prefect_docker.registry_image:
+  - prefect_docker.images.push_docker_image:
       image: ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
 
 pull:
-  - prefect_docker.registry_image:
+  - prefect_docker.images.pull_docker_image:
       image: ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
 
 deployments:
