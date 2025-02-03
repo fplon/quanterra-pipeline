@@ -1,0 +1,23 @@
+name: market-data-ingestion
+prefect-version: 2.0
+
+build: null
+
+push:
+  - prefect_docker:registry-image/${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+
+pull:
+  - prefect_docker:registry-image/${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+
+deployments:
+  - name: market-data-ingestion
+    version: 0.1.0
+    tags: ["production", "market-data", "ingestion"]
+    description: Market data ingestion flow for quanterra pipeline
+    schedule: null
+    flow_name: market_data_ingestion
+    entrypoint: src/flows/ingestion.py:market_data_ingestion_flow
+    work_pool:
+      name: docker-pool
+      work_queue_name: default
+    parameters: {} 
