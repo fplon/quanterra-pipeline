@@ -13,7 +13,7 @@ env:
   IMAGE_TAG: latest
   PREFECT_API_KEY: '${{ secrets.PREFECT_API_KEY }}'
   PREFECT_ACCOUNT_ID: '${{ secrets.PREFECT_ACCOUNT_ID }}'
-  PREFECT_WORKSPACE_ID: 'default'
+  PREFECT_WORKSPACE_ID: '${{ secrets.PREFECT_WORKSPACE_ID }}'
 
 jobs:
   deploy:
