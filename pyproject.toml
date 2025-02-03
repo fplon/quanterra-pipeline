@@ -15,7 +15,7 @@ dependencies = [
     "pyyaml>=6.0.2",
     "tenacity>=9.0.0",
     "yfinance>=0.2.52",
-    "prefect-docker>=0.3.1",
+    "prefect-docker>=0.6.2",
 ]
 
 [dependency-groups]

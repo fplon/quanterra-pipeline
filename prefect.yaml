@@ -14,16 +14,12 @@ deployments:
 
 build:
   - prefect_docker.deployments.steps.build_docker_image:
-      requires: prefect-docker>=0.3.1
+      requires: prefect-docker>=0.6.2
       image_name: ${IMAGE_NAME}
       tag: ${IMAGE_TAG}
       dockerfile: Dockerfile
       platform: linux/amd64
-      build_args:
-        DOCKER_BUILDKIT: "1"
-      docker_cli_args:
-        - "--progress=plain"
-        - "--no-cache"
+      buildcontext: "."
 
 push:
   - prefect_docker.deployments.steps.push_docker_image:
