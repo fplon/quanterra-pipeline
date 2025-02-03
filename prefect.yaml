@@ -1,0 +1,28 @@
+deployments:
+  - name: market_data_ingestion
+    version: null
+    tags: []
+    description: Market data ingestion pipeline
+    schedule: 
+      cron: "0 5 * * *"
+    flow_name: market_data_ingestion_flow
+    entrypoint: src/flows/ingestion.py:market_data_ingestion_flow
+    parameters: {}
+    work_pool:
+      name: quanterra-pool
+      work_queue_name: default
+    push: true
+
+build:
+  - prefect_docker.deployments.steps.build_docker_image:
+      requires: prefect-docker>=0.3.1
+      image_name: ${IMAGE_NAME}
+      tag: ${IMAGE_TAG}
+      dockerfile: Dockerfile
+      platform: linux/amd64
+
+push:
+  - prefect_docker.deployments.steps.push_docker_image:
+      requires: prefect-docker>=0.3.1
+      image_name: ${IMAGE_NAME}
+      tag: ${IMAGE_TAG} 

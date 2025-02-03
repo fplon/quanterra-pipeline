@@ -12,8 +12,7 @@ env:
   IMAGE_NAME: '${{ secrets.IMAGE_NAME }}'
   IMAGE_TAG: latest
   PREFECT_API_KEY: '${{ secrets.PREFECT_API_KEY }}'
-  PREFECT_ACCOUNT_ID: '${{ secrets.PREFECT_ACCOUNT_ID }}'
-  PREFECT_WORKSPACE_ID: '${{ secrets.PREFECT_WORKSPACE_ID }}'
+  PREFECT_API_URL: 'https://api.prefect.cloud/api/accounts/${{ secrets.PREFECT_ACCOUNT_ID }}/workspaces/${{ secrets.PREFECT_WORKSPACE_ID }}'
 
 jobs:
   deploy:
@@ -35,21 +34,17 @@ jobs:
       run: |
         gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
     
-    - name: Build and push Docker image
-      run: |
-        docker build -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
-        docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
     
-    - name: Deploy Prefect flow
+    - name: Install Dependencies
       run: |
-        docker run --rm \
-          -e PREFECT_API_KEY="${{ env.PREFECT_API_KEY }}" \
-          -e PREFECT_API_URL="https://api.prefect.cloud/api/accounts/${{ env.PREFECT_ACCOUNT_ID }}/workspaces/${{ env.PREFECT_WORKSPACE_ID }}" \
-          ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} \
-          prefect deploy \
-            --name "market_data_ingestion" \
-            --pool "quanterra-pool" \
-            --work-queue "default" \
-            --cron "0 5 * * *" \
-            --version ${{ github.sha }} \
-            src/flows/ingestion.py:market_data_ingestion_flow 
+        pip install prefect prefect-docker
+    
+    - name: Deploy Prefect Flow
+      uses: PrefectHQ/actions-prefect-deploy@v3
+      env:
+        PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+        PREFECT_API_URL: ${{ env.PREFECT_API_URL }} 
