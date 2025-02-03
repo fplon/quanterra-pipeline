@@ -19,6 +19,11 @@ build:
       tag: ${IMAGE_TAG}
       dockerfile: Dockerfile
       platform: linux/amd64
+      build_args:
+        DOCKER_BUILDKIT: "1"
+      docker_cli_args:
+        - "--progress=plain"
+        - "--no-cache"
 
 push:
   - prefect_docker.deployments.steps.push_docker_image:
