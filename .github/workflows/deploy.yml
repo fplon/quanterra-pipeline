@@ -68,6 +68,8 @@ jobs:
         deployment-names: market_data_ingestion
         deployment-file-path: ./prefect.yaml
       env:
+        DOCKER_BUILDKIT: "1"
+        COMPOSE_DOCKER_CLI_BUILD: "1"
         PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
         PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
         PATH: ${{ github.workspace }}/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin 
