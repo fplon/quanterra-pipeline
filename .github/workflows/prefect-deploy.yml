@@ -15,6 +15,7 @@ env:
   GCP_REGION: europe-west2
   ARTIFACT_REGISTRY: europe-west2-docker.pkg.dev
   IMAGE_NAME: market-data-ingestion
+  REPOSITORY: quanterra-docker
 
 jobs:
   build-and-deploy:
@@ -51,8 +52,8 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/prefect-flows/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/prefect-flows/${{ env.IMAGE_NAME }}:latest
+          docker build -t ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.ARTIFACT_REGISTRY }}/${{ env.GCP_PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
 
       - name: Install Prefect
         run: uv pip install prefect prefect-docker

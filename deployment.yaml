@@ -8,7 +8,7 @@ work_pool:
   work_queue_name: default
 storage:
   type: docker-container
-  image: europe-west2-docker.pkg.dev/your-project-id/prefect-flows/market-data-ingestion:latest
+  image: europe-west2-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/quanterra-docker/market-data-ingestion:latest
 schedule: null
 tags:
   - production
