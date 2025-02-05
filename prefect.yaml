@@ -24,9 +24,9 @@ push:
     # credentials: '{{ prefect.blocks.docker-registry-credentials.gcp-artifact-registry }}'
 
 # pull section allows you to provide instructions for cloning this project in remote locations
-pull: null
-# - prefect.deployments.steps.set_working_directory:
-#     directory: /opt/prefect/quanterra-pipeline
+pull:
+- prefect.deployments.steps.set_working_directory:
+    directory: /opt/prefect/quanterra-pipeline
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
