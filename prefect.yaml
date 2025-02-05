@@ -10,8 +10,9 @@ build:
     image_name: "europe-west2-docker.pkg.dev/quanterra/quanterra-docker/market-data-ingestion"
     tag: latest
     dockerfile: Dockerfile
-    buildkit: true
     platform: linux/amd64
+    build_args:
+      DOCKER_BUILDKIT: "1"
 
 # push section allows you to manage if and how this project is uploaded to remote locations
 push:
