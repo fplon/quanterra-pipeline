@@ -47,7 +47,9 @@ jobs:
           PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
         run: |
           uv pip install -U prefect
-          uv run prefect work-pool create --type managed cloud-pool || true
+          uv run prefect work-pool create cloud-pool --type prefect:managed || true
+
+          
 
       - name: Prefect Deploy
         env:
