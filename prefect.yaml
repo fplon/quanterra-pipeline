@@ -32,5 +32,5 @@ deployments:
     work_queue_name: default
   job_variables:
     image: '{{ build_image.image_name }}:{{ build_image.tag }}'
-    env:
-      PYTHONPATH: /opt/prefect/quanterra-pipeline
+    # env:
+    #   PYTHONPATH: /opt/prefect/quanterra-pipeline
