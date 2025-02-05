@@ -51,18 +51,7 @@ jobs:
           PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
         run: |
           uv pip install -U prefect
-          uv run prefect work-pool create cloud-pool --type prefect:managed || true
-
-      - name: Create Docker Registry Block
-        env:
-          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
-          PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
-        run: |
-          uv run prefect block create docker-registry-credentials \
-            --key name="gcp-artifact-registry" \
-            --key registry="${ARTIFACT_REGISTRY}" \
-            --key username="oauth2accesstoken" \
-            --key password="$(gcloud auth print-access-token)"
+          uv run prefect work-pool create cloud-pool --type prefect:managed --overwrite
 
       - name: Prefect Deploy
         env:
