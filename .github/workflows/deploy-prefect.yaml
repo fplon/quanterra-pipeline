@@ -70,4 +70,4 @@ jobs:
           # Debug Python path
           python -c "import sys; print(sys.path)"
           # Run deployment with verbose logging
-          uv run prefect deploy -n quanterra-pipeline --verbose
+          uv run prefect deploy -n quanterra-pipeline
