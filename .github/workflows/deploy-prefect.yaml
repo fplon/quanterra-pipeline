@@ -41,10 +41,17 @@ jobs:
         run: |
           uv sync --all-extras
 
-      - name: Prefect Deploy
+      - name: Create Prefect Work Pool
         env:
           PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
           PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
         run: |
           uv pip install -U prefect
+          uv run prefect work-pool create --type managed cloud-pool || true
+
+      - name: Prefect Deploy
+        env:
+          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+          PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
+        run: |
           uv run prefect deploy -n quanterra-pipeline
