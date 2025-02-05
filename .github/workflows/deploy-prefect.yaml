@@ -58,7 +58,7 @@ jobs:
           PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
           PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
         run: |
-          uv runprefect block create docker-registry-credentials \
+          uv run prefect block create docker-registry-credentials \
             --name gcp-artifact-registry \
             --registry ${{ env.ARTIFACT_REGISTRY }} \
             --username oauth2accesstoken \
