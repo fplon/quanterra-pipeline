@@ -1,7 +1,3 @@
-# Welcome to your prefect.yaml file! You can use this file for storing and managing
-# configuration for deploying your flows. We recommend committing this file to source
-# control along with your flow code.
-
 # Generic metadata about this project
 name: quanterra-pipeline
 prefect-version: 3.1.15
@@ -13,7 +9,7 @@ build:
     requires: prefect-docker>=0.3.1
     image_name: "europe-west2-docker.pkg.dev/quanterra/quanterra-docker/market-data-ingestion"
     tag: latest
-    dockerfile: auto
+    dockerfile: Dockerfile
 
 # push section allows you to manage if and how this project is uploaded to remote locations
 push:
@@ -25,8 +21,7 @@ push:
 
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull: null
-# - prefect.deployments.steps.set_working_directory:
-#     directory: /opt/prefect/quanterra-pipeline
+
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
