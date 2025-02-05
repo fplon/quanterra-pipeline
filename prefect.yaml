@@ -23,6 +23,7 @@ push:
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
 - prefect.deployments.steps.run_shell_script:
+    shell: /bin/bash
     script: |
       export PYTHONPATH=/opt/prefect/quanterra-pipeline
       python -c "import sys; print('PYTHONPATH:', os.environ.get('PYTHONPATH'))"
