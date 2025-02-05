@@ -1,5 +1,9 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
+# Create the directory first
+RUN mkdir -p /opt/prefect/quanterra-pipeline
+
+# Set as working directory
 WORKDIR /opt/prefect/quanterra-pipeline
 
 # Install system dependencies
