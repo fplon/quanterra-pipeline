@@ -28,6 +28,10 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
+
       - name: Install uv
         uses: astral-sh/setup-uv@v2
         with:
@@ -49,7 +53,16 @@ jobs:
           uv pip install -U prefect
           uv run prefect work-pool create cloud-pool --type prefect:managed || true
 
-          
+      - name: Create Docker Registry Block
+        env:
+          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+          PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
+        run: |
+          uv runprefect block create docker-registry-credentials \
+            --name gcp-artifact-registry \
+            --registry ${{ env.ARTIFACT_REGISTRY }} \
+            --username oauth2accesstoken \
+            --password "$(gcloud auth print-access-token)"
 
       - name: Prefect Deploy
         env:
