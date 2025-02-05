@@ -24,9 +24,10 @@ push:
 pull:
 - prefect.deployments.steps.run_shell_script:
     script: |
-      ls -la /opt/prefect/quanterra-pipeline
-      python -c "import sys; print(sys.path)"
-      python -c "from src.flows.market_data import run_market_data_ingestion"
+      export PYTHONPATH=/opt/prefect/quanterra-pipeline
+      python -c "import sys; print('PYTHONPATH:', os.environ.get('PYTHONPATH'))"
+      python -c "import src; print('src location:', src.__file__)"
+      python -c "from src.flows.market_data import run_market_data_ingestion; print('Flow import successful')"
 
 
 # the deployments section allows you to provide configuration for deploying flows

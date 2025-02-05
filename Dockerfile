@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables
-# ENV PYTHONPATH=/opt/prefect/quanterra-pipeline
+ENV PYTHONPATH=/opt/prefect/quanterra-pipeline
 ENV PATH="/root/.local/bin:$PATH"
 ENV UV_SYSTEM_PYTHON=1
 
