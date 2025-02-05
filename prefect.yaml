@@ -11,7 +11,6 @@ build:
 - prefect_docker.deployments.steps.build_docker_image:
     id: build_image
     requires: prefect-docker>=0.3.1
-    # image_name: gcr.io/${GCP_PROJECT_ID}/quanterra-pipeline
     image_name: "europe-west2-docker.pkg.dev/quanterra/quanterra-docker/market-data-ingestion"
     tag: latest
     dockerfile: auto
@@ -25,9 +24,9 @@ push:
     # credentials: '{{ prefect.blocks.docker-registry-credentials.gcp-artifact-registry }}'
 
 # pull section allows you to provide instructions for cloning this project in remote locations
-pull:
-- prefect.deployments.steps.set_working_directory:
-    directory: /opt/prefect/quanterra-pipeline
+pull: null
+# - prefect.deployments.steps.set_working_directory:
+#     directory: /opt/prefect/quanterra-pipeline
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
