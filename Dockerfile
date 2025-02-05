@@ -15,8 +15,8 @@ ENV UV_SYSTEM_PYTHON=1
 # Copy dependency files
 COPY pyproject.toml ./
 
-# Install dependencies with UV
-RUN --mount=type=cache,target=/root/.cache/uv \
+# Install dependencies with UV (using traditional Docker layer caching)
+RUN mkdir -p /root/.cache/uv && \
     uv pip install -e .
 
 # Copy the rest of the application

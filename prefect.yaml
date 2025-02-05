@@ -11,8 +11,6 @@ build:
     tag: latest
     dockerfile: Dockerfile
     platform: linux/amd64
-    build_args:
-      DOCKER_BUILDKIT: "1"
 
 # push section allows you to manage if and how this project is uploaded to remote locations
 push:
