@@ -1,0 +1,44 @@
+name: Deploy Prefect flow
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: europe-west2
+  ARTIFACT_REGISTRY: europe-west2-docker.pkg.dev
+  IMAGE_NAME: market-data-ingestion
+  REPOSITORY: quanterra-docker
+  PREFECT_WORKSPACE: paradigmer/default
+  PREFECT_API_URL: 'https://api.prefect.cloud/api/accounts/${{ secrets.PREFECT_ACCOUNT_ID }}/workspaces/${{ secrets.PREFECT_WORKSPACE_ID }}'
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Prefect Deploy
+        env:
+          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+          PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
+        run: |
+          pip install -U prefect
+          prefect deploy -n quanterra-pipeline
