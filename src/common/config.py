@@ -1,7 +1,10 @@
 import os
 from typing import Any
 
+import dotenv
 import yaml
+
+dotenv.load_dotenv()
 
 
 def load_yaml_config(path: str) -> dict[str, Any]:
