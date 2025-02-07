@@ -9,7 +9,7 @@ from src.ingest.data_sources.eodhd.factory import EODHDProcessorFactory
 from src.ingest.data_sources.eodhd.models import EODHDConfig
 
 
-async def run_eodhd_ingestion() -> None:
+async def run_eodhd_ingestion(manifest: PipelineManifest | None = None) -> None:
     """Run EODHD data ingestion pipeline."""
     try:
         # Initialise logger for EODHD component
@@ -17,9 +17,10 @@ async def run_eodhd_ingestion() -> None:
         logger.info("Starting EODHD data ingestion")
 
         # Load and parse manifest
-        manifest_path = "src/ingest/config/manifests/eodhd.yml"
-        raw_manifest = load_yaml_config(manifest_path)
-        manifest = PipelineManifest.model_validate(resolve_env_vars(raw_manifest))
+        if not manifest:
+            manifest_path = "src/ingest/config/manifests/eodhd.yml"
+            raw_manifest = load_yaml_config(manifest_path)
+            manifest = PipelineManifest.model_validate(resolve_env_vars(raw_manifest))
 
         # Create processor factory
         factory = EODHDProcessorFactory()

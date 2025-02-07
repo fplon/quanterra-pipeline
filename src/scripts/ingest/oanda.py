@@ -9,7 +9,7 @@ from src.ingest.data_sources.oanda.factory import OANDAProcessorFactory
 from src.ingest.data_sources.oanda.models import OANDAConfig
 
 
-async def run_oanda_ingestion() -> None:
+async def run_oanda_ingestion(manifest: PipelineManifest | None = None) -> None:
     """Run OANDA data ingestion pipeline."""
     try:
         # Initialise logger for OANDA component
@@ -17,9 +17,10 @@ async def run_oanda_ingestion() -> None:
         logger.info("Starting OANDA data ingestion")
 
         # Load and parse manifest
-        manifest_path = "src/ingest/config/manifests/oanda.yml"
-        raw_manifest = load_yaml_config(manifest_path)
-        manifest = PipelineManifest.model_validate(resolve_env_vars(raw_manifest))
+        if not manifest:
+            manifest_path = "src/ingest/config/manifests/oanda.yml"
+            raw_manifest = load_yaml_config(manifest_path)
+            manifest = PipelineManifest.model_validate(resolve_env_vars(raw_manifest))
 
         # Create processor factory
         factory = OANDAProcessorFactory()
