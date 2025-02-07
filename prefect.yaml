@@ -32,6 +32,4 @@ deployments:
     work_queue_name: default
     job_variables:
       image: '{{ build_image.image_name }}:{{ build_image.tag }}'
-      env:
-        EODHD_BASE_URL: {{ }}
 
