@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pydantic import BaseModel, Field
 
 from src.common.types import JSONType
@@ -15,6 +17,12 @@ class EODHDConfig(BaseModel):
     instruments: list[str] = Field(default_factory=list)
     macro_indicators: list[str] = Field(default_factory=list)
     macro_countries: list[str] = Field(default_factory=list)
+    gcp_credentials: Credentials | ServiceAccountCredentials | None = None
+
+    model_config = {
+        "arbitrary_types_allowed": True,
+        "protected_namespaces": (),
+    }
 
 
 class BaseEODHDData(BaseModel):

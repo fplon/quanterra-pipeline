@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Optional
 
 from google.cloud import storage
+from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from loguru import logger
 
 from ..types import JSONType
@@ -15,17 +17,27 @@ class GCPStorageClient:
 
     _instance: Optional["GCPStorageClient"] = None
     _client: Optional[storage.Client] = None
+    _credentials: Optional[Credentials | ServiceAccountCredentials] = None
 
-    def __new__(cls) -> "GCPStorageClient":
+    def __new__(
+        cls, credentials: Optional[Credentials | ServiceAccountCredentials] = None
+    ) -> "GCPStorageClient":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+            cls._credentials = credentials
         return cls._instance
 
-    def __init__(self) -> None:
-        """Initialise the GCP Storage client if not already initialised."""
+    def __init__(
+        self, credentials: Optional[Credentials | ServiceAccountCredentials] = None
+    ) -> None:
+        """Initialise the GCP Storage client if not already initialised.
+
+        Args:
+            credentials: Optional GCP credentials. If not provided, will use Application Default Credentials.
+        """
         if self._client is None:
             logger.debug("Initialising new GCP Storage client")
-            self._client = storage.Client()
+            self._client = storage.Client(credentials=self._credentials)
 
     def store_json_data(
         self,
