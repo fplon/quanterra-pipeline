@@ -20,7 +20,7 @@ class YahooFinanceProcessor(BaseProcessor):
     def __init__(self, config: YahooFinanceConfig):
         """Initialise processor with config."""
         self.config = config
-        self.storage_client = GCPStorageClient()
+        self.storage_client = GCPStorageClient(credentials=config.gcp_credentials)
         self.yf_client = YahooFinanceClient()
 
     @property

@@ -26,7 +26,7 @@ class OANDAIngestionProcessor(BaseProcessor):
             base_url=config.base_url,
             account_id=config.account_id,
         )
-        self.storage_client = GCPStorageClient()
+        self.storage_client = GCPStorageClient(credentials=config.gcp_credentials)
 
     @property
     def name(self) -> str:
