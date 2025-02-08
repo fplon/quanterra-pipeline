@@ -50,23 +50,11 @@ jobs:
         run: |
           uv sync --all-extras
 
-      - name: Create Prefect Work Pool
-        env:
-          PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
-          PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
-        run: |
-          uv pip install -U prefect
-          uv run prefect work-pool create cloud-pool --type prefect:managed || true
-
       - name: Prefect Deploy
         env:
           PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
           PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
           PREFECT_LOGGING_LEVEL: "DEBUG"
         run: |
-          # Debug directory structure
-          ls -la
-          ls -la src/flows/
-          # Debug Python path
-          python -c "import sys; print(sys.path)"
+          uv pip install -U prefect
           uv run prefect deploy -n quanterra-pipeline

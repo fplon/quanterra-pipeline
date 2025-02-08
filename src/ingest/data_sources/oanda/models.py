@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pydantic import BaseModel
 
 from src.common.types import JSONType
@@ -16,6 +18,12 @@ class OANDAConfig(BaseModel):
     count: int
     price: str = "MBA"
     instruments: list[str] | None = None
+    gcp_credentials: Credentials | ServiceAccountCredentials | None = None
+
+    model_config = {
+        "arbitrary_types_allowed": True,
+        "protected_namespaces": (),
+    }
 
 
 class BaseOANDAData(BaseModel):
