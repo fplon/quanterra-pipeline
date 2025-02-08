@@ -27,7 +27,7 @@ class EODIngestionProcessor(BaseProcessor):
     def __init__(self, config: EODHDConfig):
         self.config = config
         self.eodhd_client = EODHDClient(api_key=config.api_key, base_url=config.base_url)
-        self.storage_client = GCPStorageClient()
+        self.storage_client = GCPStorageClient(credentials=config.gcp_credentials)
 
     @property
     def name(self) -> str:

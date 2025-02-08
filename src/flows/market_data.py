@@ -2,6 +2,7 @@ import asyncio
 
 from prefect import flow, task
 from prefect.blocks.system import Secret
+from prefect_gcp import GcpCredentials  # type: ignore
 
 from src.ingest.core.manifest import PipelineManifest, ProcessorManifest, ProcessorType
 from src.scripts.ingest.eodhd import run_eodhd_ingestion
@@ -14,6 +15,8 @@ from src.scripts.ingest.eodhd import run_eodhd_ingestion
 async def run_eodhd_ingestion_task() -> None:
     eodhd_api_key = await Secret.load("eodhd-api-key")
     gcp_bucket_name = await Secret.load("gcp-bucket-name")
+    gcp_credentials = await GcpCredentials.load("quanterra-gcp-creds")
+    # gcp_cloud_storage_bucket = await GcsBucket.load("dev-bronze")
 
     settings = {
         "api_key": eodhd_api_key.get(),
@@ -27,6 +30,7 @@ async def run_eodhd_ingestion_task() -> None:
             "gdp_growth_annual",
         ],
         "macro_countries": ["GBR", "USA"],
+        "gcp_credentials": gcp_credentials.get_credentials_from_service_account(),
     }
 
     manifest = PipelineManifest(
