@@ -28,7 +28,7 @@ deployments:
   schedule: {cron: "0 5 * * *"}
   entrypoint: src.flows.market_data:run_market_data_ingestion
   work_pool:
-    name: cloud-run-pool
+    name: cloud-run-push-pool
     work_queue_name: default
     job_variables:
       image: '{{ build_image.image_name }}:{{ build_image.tag }}'
