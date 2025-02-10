@@ -1,17 +1,13 @@
-name: Deploy Prefect flow
+name: Deploy Prefect flow - Prod
 
 on:
-  pull_request:
+  push:
     branches:
       - main
 
 env:
   GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  GCP_REGION: europe-west2
-  ARTIFACT_REGISTRY: europe-west2-docker.pkg.dev
-  IMAGE_NAME: market-data-ingestion
-  REPOSITORY: quanterra-docker
-  PREFECT_WORKSPACE: paradigmer/default
+  GCP_ARTIFACT_REGISTRY: ${{ secrets.GCP_ARTIFACT_REGISTRY }}
   PREFECT_API_URL: 'https://api.prefect.cloud/api/accounts/${{ secrets.PREFECT_ACCOUNT_ID }}/workspaces/${{ secrets.PREFECT_WORKSPACE_ID }}'
 
 jobs:
@@ -35,7 +31,7 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
         run: |
-          gcloud auth configure-docker ${{ env.ARTIFACT_REGISTRY }}
+          gcloud auth configure-docker ${{ secrets.GCP_ARTIFACT_REGISTRY }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v2
@@ -54,7 +50,6 @@ jobs:
         env:
           PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
           PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
-          PREFECT_LOGGING_LEVEL: "DEBUG"
         run: |
           uv pip install -U prefect
-          uv run prefect deploy -n quanterra-pipeline
+          uv run prefect deploy -n quanterra-pipeline-prod
