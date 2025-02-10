@@ -1,7 +1,6 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-# Create the directory for the project - match Prefect's default
-RUN mkdir -p /opt/prefect/quanterra-pipeline
+# Create the directory for the project
 WORKDIR /opt/prefect/quanterra-pipeline
 
 # Install system dependencies
@@ -14,12 +13,13 @@ ENV PYTHONPATH=/opt/prefect/quanterra-pipeline
 ENV PATH="/root/.local/bin:$PATH"
 ENV UV_SYSTEM_PYTHON=1
 
-# Copy dependency files
+# Copy only necessary files for installation
 COPY pyproject.toml ./
 
-# Install dependencies with UV (using traditional Docker layer caching)
+# Install dependencies with UV
 RUN mkdir -p /root/.cache/uv && \
-    uv pip install -e .
+    uv pip install -e . && \
+    rm -rf /root/.cache/uv
 
-# Copy the rest of the application
-COPY . .
+# Copy only the source code
+COPY src ./src/
