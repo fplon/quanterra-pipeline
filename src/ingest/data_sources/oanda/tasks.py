@@ -12,7 +12,9 @@ from src.ingest.data_sources.oanda.models import CandlesData, InstrumentsData, O
 
 @task(name="store_oanda_data", retries=3)
 async def store_data(
-    data: InstrumentsData | CandlesData, location: StorageLocation, config: OANDAConfig
+    data: InstrumentsData | CandlesData,
+    location: StorageLocation,
+    config: OANDAConfig,
 ) -> None:
     """Store OANDA data in Google Cloud Storage."""
     storage_client = GCPStorageClient(credentials=config.gcp_credentials)
@@ -24,6 +26,7 @@ async def store_data(
     )
 
 
+# TODO rename fetch to something better, here and elsewhere
 @task(name="fetch_oanda_instruments")
 async def fetch_instruments(config: OANDAConfig, client: OANDAClient) -> list[str]:
     """Fetch and store available OANDA instruments."""

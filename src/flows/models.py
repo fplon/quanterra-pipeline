@@ -242,3 +242,14 @@ class YahooFinanceEnvironmentSettings(BaseEnvironmentSettings[YahooFinanceFlowSe
             bucket_name="datalake-prod-bronze",
         ),
     }
+
+
+class InteractiveInvestorEnvironmentSettings(BaseEnvironmentSettings[BaseFlowSettings]):
+    _settings = {
+        Environment.DEV: BaseFlowSettings(
+            bucket_name="datalake-dev-bronze",
+        ),
+        Environment.PROD: BaseFlowSettings(
+            bucket_name="datalake-prod-bronze",
+        ),
+    }

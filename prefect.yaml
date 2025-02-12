@@ -58,6 +58,21 @@ deployments:
       work_queue_name: default
       job_variables:
         image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: dev-interative-investor-pipeline
+    tags: 
+      - ingestion
+      - transactions
+    description: "Daily Interactive Investor transaction ingestion pipeline"
+    entrypoint: src.flows.interactive_investor:interactive_investor_transactions_flow
+    parameters:
+      env: 'dev'
+      # transactions_source_path: ''
+      # portfolio_name: ''
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
 
   # Prod deployments
   - name: prod-eodhd-pipeline
@@ -95,6 +110,21 @@ deployments:
     entrypoint: src.flows.oanda:oanda_market_data_flow
     parameters:
       env: 'prod'
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: prod-interative-investor-pipeline
+    tags: 
+      - ingestion
+      - transactions
+    description: "Daily Interactive Investor transaction ingestion pipeline"
+    entrypoint: src.flows.interactive_investor:interactive_investor_transactions_flow
+    parameters:
+      env: 'prod'
+      # transactions_source_path: ''
+      # portfolio_name: ''
     work_pool:
       name: cloud-run-push-pool
       work_queue_name: default
