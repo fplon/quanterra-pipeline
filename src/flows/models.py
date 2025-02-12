@@ -24,6 +24,17 @@ class BaseEnvironmentSettings(Generic[T]):
         return cast(T, cls._settings[env])
 
 
+class SimpleEnvironmentSettings(BaseEnvironmentSettings[BaseFlowSettings]):
+    _settings = {
+        Environment.DEV: BaseFlowSettings(
+            bucket_name="datalake-dev-bronze",
+        ),
+        Environment.PROD: BaseFlowSettings(
+            bucket_name="datalake-prod-bronze",
+        ),
+    }
+
+
 class EODHDFlowSettings(BaseFlowSettings):
     exchanges: list[str]
     instruments: list[str]
@@ -239,17 +250,6 @@ class YahooFinanceEnvironmentSettings(BaseEnvironmentSettings[YahooFinanceFlowSe
                 "0P000102MM.L",
                 "0P0001EI7Y.L",
             ],
-            bucket_name="datalake-prod-bronze",
-        ),
-    }
-
-
-class InteractiveInvestorEnvironmentSettings(BaseEnvironmentSettings[BaseFlowSettings]):
-    _settings = {
-        Environment.DEV: BaseFlowSettings(
-            bucket_name="datalake-dev-bronze",
-        ),
-        Environment.PROD: BaseFlowSettings(
             bucket_name="datalake-prod-bronze",
         ),
     }
