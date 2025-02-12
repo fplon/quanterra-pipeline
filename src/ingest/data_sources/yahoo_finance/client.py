@@ -1,4 +1,5 @@
 from types import TracebackType
+from typing import Generator
 
 import yfinance as yf
 from pandas import DataFrame
@@ -47,24 +48,36 @@ class YahooFinanceClient:
             },
         }
 
+    @staticmethod
+    def chunk_list(lst: list[str], chunk_size: int) -> Generator[list[str], None, None]:
+        """Yield successive n-sized chunks from lst."""
+        for i in range(0, len(lst), chunk_size):
+            yield lst[i : i + chunk_size]
+
     def get_market_data(
         self, yf_tickers: list[str], period: str = "max", interval: str = "1d"
     ) -> JSONType:
-        """Get historical market data for multiple tickers."""
-        df: DataFrame = yf.download(
-            yf_tickers,
-            period=period,
-            interval=interval,
-            group_by="ticker",
-            auto_adjust=True,
-            prepost=True,
-            threads=True,
-            proxy=None,
-            session=self._session,
-            progress=False,
-        )
+        """Get historical market data for multiple tickers in chunks."""
+        all_data: dict[str, dict[str, dict[str, float]]] = {}
 
-        return self._market_data_to_dict(df, yf_tickers)
+        for chunk in self.chunk_list(yf_tickers, 5):  # Process 5 tickers at a time
+            df: DataFrame = yf.download(
+                chunk,
+                period=period,
+                interval=interval,
+                group_by="ticker",
+                auto_adjust=True,
+                prepost=True,
+                threads=False,
+                proxy=None,
+                session=self._session,
+                progress=False,
+            )
+            chunk_data = self._market_data_to_dict(df, chunk)
+            if isinstance(chunk_data, dict):
+                all_data.update(chunk_data)
+
+        return all_data
 
     def _market_data_to_dict(self, df: DataFrame, yf_tickers: list[str]) -> JSONType:
         """Convert market data dataframe to dictionary."""
