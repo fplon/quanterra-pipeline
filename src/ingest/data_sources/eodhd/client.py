@@ -72,9 +72,28 @@ class EODHDClient(BaseAPIClient):
         response = await self._make_request(f"splits/{instrument}.{exchange}")
         return cast(JSONType, response.json())
 
-    async def get_bulk_eod(self, exchange: str) -> JSONType:
+    async def get_bulk_eod(self, exchange: str, date: str | None = None) -> JSONType:
         """Get bulk end-of-day data for an entire exchange."""
-        response = await self._make_request(f"eod-bulk-last-day/{exchange}")
+        params: dict[str, str | int] = {}
+        if date:
+            params["date"] = date
+        response = await self._make_request(f"eod-bulk-last-day/{exchange}", params)
+        return cast(JSONType, response.json())
+
+    async def get_bulk_dividends(self, exchange: str, date: str | None = None) -> JSONType:
+        """Get bulk dividends for an entire exchange."""
+        params: dict[str, str | int] = {"type": "dividends"}
+        if date:
+            params["date"] = date
+        response = await self._make_request(f"eod-bulk-last-day/{exchange}", params)
+        return cast(JSONType, response.json())
+
+    async def get_bulk_splits(self, exchange: str, date: str | None = None) -> JSONType:
+        """Get bulk splits for an entire exchange."""
+        params: dict[str, str | int] = {"type": "splits"}
+        if date:
+            params["date"] = date
+        response = await self._make_request(f"eod-bulk-last-day/{exchange}", params)
         return cast(JSONType, response.json())
 
     async def get_economic_events(

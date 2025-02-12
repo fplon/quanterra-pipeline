@@ -64,11 +64,11 @@ class ExchangeData(BaseEODHDData):
         return [ex.get("Code", "") for ex in self.data if "Code" in ex]
 
 
-class ExchangeSymbolData(BaseEODHDData):
-    """Container for exchange symbol data."""
+class BaseExchangeLevelData(BaseEODHDData):
+    """Base class container for exchange-level data."""
 
     exchange: str
-    data_type: str = "exchange-symbol-list"
+    data_type: str = "exchange-level"
 
     def _get_metadata(self) -> dict[str, str]:
         metadata = super()._get_metadata()
@@ -79,11 +79,21 @@ class ExchangeSymbolData(BaseEODHDData):
         date_str = self.timestamp.strftime("%Y/%m/%d")
         return f"eodhd/{self.data_type}/{date_str}/{self.exchange}.json.gz"
 
+
+class ExchangeSymbolData(BaseExchangeLevelData):
+    """Container for exchange symbol data."""
+
     def get_exchange_symbols_list(self) -> list[str]:
         """Get the list of exchange symbols from the data"""
         if not isinstance(self.data, list):
             raise ValueError("Data is not a list of dictionaries (records)")
         return [f"{ex.get('Code', '')}.{self.exchange}" for ex in self.data if "Code" in ex]
+
+
+class ExchangeBulkData(BaseExchangeLevelData):
+    """Container for exchange bulk data."""
+
+    pass
 
 
 class InstrumentData(BaseEODHDData):

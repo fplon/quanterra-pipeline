@@ -10,6 +10,7 @@ from src.ingest.data_sources.eodhd.client import EODHDClient
 from src.ingest.data_sources.eodhd.models import (
     EconomicEventData,
     EODHDConfig,
+    ExchangeBulkData,
     ExchangeData,
     ExchangeSymbolData,
     InstrumentData,
@@ -17,7 +18,12 @@ from src.ingest.data_sources.eodhd.models import (
 )
 
 storage_data_type = (
-    ExchangeData | ExchangeSymbolData | InstrumentData | MacroData | EconomicEventData
+    ExchangeData
+    | ExchangeSymbolData
+    | InstrumentData
+    | MacroData
+    | EconomicEventData
+    | ExchangeBulkData
 )
 
 
@@ -90,6 +96,7 @@ async def process_exchange_symbol(
             data=raw_data,
             timestamp=datetime.now(),
             exchange=exchange,
+            data_type="exchange-symbol-list",
         )
         location = StorageLocation(bucket=config.bucket_name, path=data.get_storage_path())
         await store_eodhd_data(data, location, config)
@@ -133,6 +140,65 @@ async def fetch_exchange_symbols(
     return await process_exchange_symbols(config, client, exchanges_to_fetch)
 
 
+async def process_exchange_bulk(
+    config: EODHDConfig, client: EODHDClient, exchange: str, data_type: str, date: str | None = None
+) -> None:
+    """Process EODHD exchange bulk data."""
+    logger.info(f"Processing exchange bulk data for {exchange} {data_type}")
+    # TODO prevent INDX and EUFUND from bulk dividends and splits
+    # TODO run 2-3 days at a time
+    try:
+        if data_type == "bulk_eod":
+            raw_data = await client.get_bulk_eod(exchange, date)
+        elif data_type == "bulk_dividends":
+            raw_data = await client.get_bulk_dividends(exchange, date)
+        elif data_type == "bulk_splits":
+            raw_data = await client.get_bulk_splits(exchange, date)
+        else:
+            raise ValueError(f"Invalid data type: {data_type}")
+        data = ExchangeBulkData(
+            data=raw_data,
+            timestamp=datetime.now(),
+            data_type=data_type,
+            exchange=exchange,
+        )
+        location = StorageLocation(bucket=config.bucket_name, path=data.get_storage_path())
+        await store_eodhd_data(data, location, config)
+        logger.success(f"Stored exchange bulk data at: {location}")
+
+    except Exception:
+        logger.exception(f"Error processing exchange bulk {data_type} data for {exchange}")
+
+
+async def process_exchange_bulk_data(
+    config: EODHDConfig, client: EODHDClient, exchanges: list[str]
+) -> None:
+    """Process multiple exchange bulk data concurrently."""
+    data_types = ["bulk_eod", "bulk_dividends", "bulk_splits"]
+
+    semaphore = asyncio.Semaphore(8)  # Limit to concurrent requests
+
+    async def sem_task(exchange: str, data_type: str) -> None:
+        async with semaphore:
+            return await process_exchange_bulk(config, client, exchange, data_type)
+
+    tasks = [sem_task(exchange, data_type) for exchange in exchanges for data_type in data_types]
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+@task(name="fetch_eodhd_exchange_bulk")
+async def fetch_exchange_bulk(
+    config: EODHDConfig,
+    client: EODHDClient,
+    exchanges: list[str] | None = None,
+) -> None:
+    """Fetch and store EODHD exchange bulk data - eod, dividends, splits."""
+    logger.info("Fetching EODHD exchange bulk data")
+
+    exchanges_to_fetch = config.exchanges or exchanges or []
+    await process_exchange_bulk_data(config, client, exchanges_to_fetch)
+
+
 async def process_instrument(
     config: EODHDConfig, client: EODHDClient, instrument: str, endpoint: str
 ) -> None:
@@ -174,7 +240,7 @@ async def process_instruments(
 ) -> None:
     """Process multiple instruments concurrently with a limit on concurrency."""
     endpoints = ["dividends", "splits", "eod", "fundamentals", "news"]
-    semaphore = asyncio.Semaphore(5)  # Limit to 5 concurrent tasks
+    semaphore = asyncio.Semaphore(40)  # Limit to concurrent requests
 
     async def sem_task(instrument: str, endpoint: str) -> None:
         async with semaphore:
@@ -223,11 +289,13 @@ async def process_macro_indicators(
     config: EODHDConfig, client: EODHDClient, indicators: list[str], iso_codes: list[str]
 ) -> None:
     """Process multiple macro indicators concurrently."""
-    tasks = [
-        process_macro_indicator(config, client, iso_code, indicator)
-        for indicator in indicators
-        for iso_code in iso_codes
-    ]
+    semaphore = asyncio.Semaphore(40)  # Limit to concurrent requests
+
+    async def sem_task(iso_code: str, indicator: str) -> None:
+        async with semaphore:
+            return await process_macro_indicator(config, client, iso_code, indicator)
+
+    tasks = [sem_task(iso_code, indicator) for indicator in indicators for iso_code in iso_codes]
     await asyncio.gather(*tasks, return_exceptions=True)
 
 

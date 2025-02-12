@@ -45,7 +45,10 @@ class YahooFinanceProcessor(BaseProcessor):
                 logger.info("Processing ticker data")
                 ticker_data = client.get_tickers_data(self.config.tickers)
                 data = YahooFinanceData(
-                    data=ticker_data, timestamp=datetime.now(), data_type="tickers"
+                    data=ticker_data,
+                    timestamp=datetime.now(),
+                    data_type="tickers",
+                    ticker="BULK",
                 )
                 location = StorageLocation(
                     bucket=self.config.bucket_name, path=data.get_storage_path()
@@ -58,7 +61,10 @@ class YahooFinanceProcessor(BaseProcessor):
                 logger.info("Processing market data")
                 market_data = client.get_market_data(self.config.tickers)
                 data = YahooFinanceData(
-                    data=market_data, timestamp=datetime.now(), data_type="market"
+                    data=market_data,
+                    timestamp=datetime.now(),
+                    data_type="market",
+                    ticker="BULK",
                 )
                 location = StorageLocation(
                     bucket=self.config.bucket_name, path=data.get_storage_path()

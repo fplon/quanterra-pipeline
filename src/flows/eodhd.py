@@ -1,5 +1,3 @@
-import asyncio
-
 from prefect import flow, get_run_logger
 from prefect.blocks.system import Secret
 from prefect_gcp import GcpCredentials
@@ -9,6 +7,7 @@ from src.ingest.data_sources.eodhd.client import EODHDClient
 from src.ingest.data_sources.eodhd.models import EODHDConfig
 from src.ingest.data_sources.eodhd.tasks import (
     fetch_economic_events,
+    fetch_exchange_bulk,
     fetch_exchange_symbols,
     fetch_exchanges,
     fetch_instruments,
@@ -17,7 +16,15 @@ from src.ingest.data_sources.eodhd.tasks import (
 
 
 @flow(name="eodhd_market_data")
-async def eodhd_market_data_flow(env: str = "dev") -> None:
+async def eodhd_market_data_flow(
+    env: str = "dev",
+    run_exchages: bool = True,
+    run_exchange_symbols: bool = True,
+    run_exchange_bulk: bool = True,
+    run_instruments: bool = True,
+    run_macro_indicators: bool = True,
+    run_economic_events: bool = True,
+) -> None:
     """Flow for fetching EODHD market data."""
     logger = get_run_logger()
     env = Environment(env)
@@ -47,17 +54,29 @@ async def eodhd_market_data_flow(env: str = "dev") -> None:
     )
 
     # Fetch exchanges
-    exchanges = await fetch_exchanges(config, client)
+    if run_exchages:
+        exchanges = await fetch_exchanges(config, client)
+    else:
+        exchanges = config.exchanges
 
     # Fetch exchange symbols
-    exchange_symbols = await fetch_exchange_symbols(config, client, exchanges)
+    if run_exchange_symbols:
+        exchange_symbols = await fetch_exchange_symbols(config, client, exchanges)
+    else:
+        exchange_symbols = config.instruments
+
+    # Fetch exchange bulk data
+    if run_exchange_bulk:
+        await fetch_exchange_bulk(config, client, exchanges)
 
     # Fetch instrument-level data
-    await fetch_instruments(config, client, exchange_symbols)
+    if run_instruments:
+        await fetch_instruments(config, client, exchange_symbols)
 
-    # Fetch macro-level data and economic events
-    econ_tasks = [
-        fetch_macro_indicators(config, client),
-        fetch_economic_events(config, client),
-    ]
-    await asyncio.gather(*econ_tasks, return_exceptions=True)
+    # Fetch macro indicators
+    if run_macro_indicators:
+        await fetch_macro_indicators(config, client)
+
+    # Fetch economic events
+    if run_economic_events:
+        await fetch_economic_events(config, client)

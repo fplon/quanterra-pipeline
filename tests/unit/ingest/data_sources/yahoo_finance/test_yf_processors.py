@@ -163,6 +163,7 @@ class TestYahooFinanceProcessor:
             data={"test": "data"},
             timestamp=datetime.now(),
             data_type="test",
+            ticker="BULK",
         )
         location = StorageLocation(bucket="test-bucket", path="test/path")
 
