@@ -53,4 +53,4 @@ jobs:
           PREFECT_API_URL: ${{ env.PREFECT_API_URL }}
         run: |
           uv pip install -U prefect
-          uv run prefect deploy -n quanterra-pipeline-prod
+          uv run prefect deploy -n prod-*
