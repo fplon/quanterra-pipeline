@@ -172,13 +172,15 @@ async def process_instrument(
 async def process_instruments(
     config: EODHDConfig, client: EODHDClient, instruments: list[str]
 ) -> None:
-    """Process multiple instruments concurrently."""
-    endpoints = ["dividends", "splits", "eod", "fundamentals", "news"]  # TODO pass in instead?
-    tasks = [
-        process_instrument(config, client, instrument, endpoint)
-        for instrument in instruments
-        for endpoint in endpoints
-    ]
+    """Process multiple instruments concurrently with a limit on concurrency."""
+    endpoints = ["dividends", "splits", "eod", "fundamentals", "news"]
+    semaphore = asyncio.Semaphore(5)  # Limit to 5 concurrent tasks
+
+    async def sem_task(instrument: str, endpoint: str) -> None:
+        async with semaphore:
+            return await process_instrument(config, client, instrument, endpoint)
+
+    tasks = [sem_task(instrument, endpoint) for instrument in instruments for endpoint in endpoints]
     await asyncio.gather(*tasks, return_exceptions=True)
 
 
