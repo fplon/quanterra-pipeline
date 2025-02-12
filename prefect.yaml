@@ -27,6 +27,8 @@ deployments:
     tags: []
     description: "Daily market data ingestion pipeline"
     entrypoint: src.flows.market_data:run_market_data_ingestion
+    parameters:
+      env: 'dev'
     work_pool:
       name: cloud-run-push-pool
       work_queue_name: default
@@ -40,6 +42,8 @@ deployments:
     description: "Daily market data ingestion pipeline"
     schedule: {cron: "0 5 * * *"}
     entrypoint: src.flows.market_data:run_market_data_ingestion
+    parameters:
+      env: 'prod'
     work_pool:
       name: cloud-run-push-pool
       work_queue_name: default

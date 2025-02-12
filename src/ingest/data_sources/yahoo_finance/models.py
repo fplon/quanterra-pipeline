@@ -4,6 +4,7 @@ from google.oauth2.credentials import Credentials
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pydantic import BaseModel
 
+from src.common.json_utils import convert_to_json_safe
 from src.common.types import JSONType
 
 
@@ -31,6 +32,20 @@ class YahooFinanceData(BaseModel):
         """Get the storage path for the data."""
         date_str = self.timestamp.strftime("%Y/%m/%d")
         return f"yahoo_finance/{date_str}/{self.data_type}.json.gz"
+
+    def _get_metadata(self) -> dict[str, str]:
+        """Get the metadata for the data."""
+        return {
+            "data_type": self.data_type,
+            "timestamp": self.timestamp.isoformat(),
+        }
+
+    def to_json(self) -> dict[str, JSONType]:
+        """Convert to JSON format for storage."""
+        return {
+            "data": convert_to_json_safe(self.data),
+            "metadata": self._get_metadata(),
+        }
 
 
 class TickerData(YahooFinanceData):
