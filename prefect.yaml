@@ -21,12 +21,36 @@ push:
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
-  # Dev deployment
-  - name: quanterra-pipeline-dev
+  # Dev deployments
+  - name: dev-eodhd-pipeline
     version: null
     tags: []
-    description: "Daily market data ingestion pipeline"
-    entrypoint: src.flows.market_data:run_market_data_ingestion
+    description: "Daily EODHD market data ingestion pipeline"
+    entrypoint: src.flows.eodhd:eodhd_market_data_flow
+    parameters:
+      env: 'dev'
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: dev-yf-pipeline
+    version: null
+    tags: []
+    description: "Daily Yahoo Finance market data ingestion pipeline"
+    entrypoint: src.flows.yahoo_finance:yahoo_finance_market_data_flow
+    parameters:
+      env: 'dev'
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: dev-oanda-pipeline
+    version: null
+    tags: []
+    description: "Daily OANDA market data ingestion pipeline"
+    entrypoint: src.flows.oanda:oanda_market_data_flow
     parameters:
       env: 'dev'
     work_pool:
@@ -35,13 +59,39 @@ deployments:
       job_variables:
         image: '{{ build_image.image_name }}:{{ build_image.tag }}'
 
-  # Prod deployment
-  - name: quanterra-pipeline-prod
+  # Prod deployments
+  - name: prod-eodhd-pipeline
     version: null
     tags: []
-    description: "Daily market data ingestion pipeline"
+    description: "Daily EODHD market data ingestion pipeline"
     schedule: {cron: "0 5 * * *"}
-    entrypoint: src.flows.market_data:run_market_data_ingestion
+    entrypoint: src.flows.eodhd:eodhd_market_data_flow
+    parameters:
+      env: 'prod'
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: prod-yf-pipeline
+    version: null
+    tags: []
+    description: "Daily Yahoo Finance market data ingestion pipeline"
+    schedule: {cron: "0 5 * * *"}
+    entrypoint: src.flows.yahoo_finance:yahoo_finance_market_data_flow
+    parameters:
+      env: 'prod'
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: prod-oanda-pipeline
+    version: null
+    tags: []
+    description: "Daily OANDA market data ingestion pipeline"
+    schedule: {cron: "0 5 * * *"}
+    entrypoint: src.flows.oanda:oanda_market_data_flow
     parameters:
       env: 'prod'
     work_pool:
