@@ -66,6 +66,7 @@ class TestYahooFinanceData:
         data = self.ConcreteData(
             data={"test": "data"},
             timestamp=timestamp,
+            ticker="BULK",
         )
 
         path = data.get_storage_path()
@@ -87,6 +88,7 @@ class TestTickerData:
             data=test_data,
             timestamp=timestamp,
             data_type="tickers",
+            ticker="BULK",
         )
 
         assert data.data == test_data
@@ -100,6 +102,7 @@ class TestTickerData:
             data={},
             timestamp=timestamp,
             data_type="tickers",
+            ticker="BULK",
         )
 
         path = data.get_storage_path()
@@ -121,6 +124,7 @@ class TestMarketData:
             data=test_data,
             timestamp=timestamp,
             data_type="market",
+            ticker="BULK",
         )
 
         assert data.data == test_data
@@ -134,6 +138,7 @@ class TestMarketData:
             data={},
             timestamp=timestamp,
             data_type="market",
+            ticker="BULK",
         )
 
         path = data.get_storage_path()

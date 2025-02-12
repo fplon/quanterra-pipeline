@@ -45,7 +45,13 @@ class EODHDEnvironmentSettings(BaseEnvironmentSettings[EODHDFlowSettings]):
             bucket_name="datalake-dev-bronze",
         ),
         Environment.PROD: EODHDFlowSettings(
-            exchanges=["LSE", "EUFUND", "INDX"],
+            exchanges=[
+                "US",
+                "LSE",
+                "XETRA",
+                "EUFUND",
+                "INDX",
+            ],
             instruments=[],  # Get all instruments for the above exchanges
             macro_indicators=[
                 "real_interest_rate",
