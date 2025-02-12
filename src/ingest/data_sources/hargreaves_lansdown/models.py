@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -7,21 +9,32 @@ class HargreavesLansdownConfig(BaseModel):
     """Configuration for Hargreaves Lansdown data ingestion."""
 
     bucket_name: str
+    portfolio_name: str = "unassigned"
     transactions_source_path: str | None = None
     positions_source_path: str | None = None
     closed_positions_source_path: str | None = None
+    gcp_credentials: Credentials | ServiceAccountCredentials | None = None
+
+    # TODO make this part of a base model
+    model_config = {
+        "arbitrary_types_allowed": True,
+        "protected_namespaces": (),
+    }
 
 
 class HargreavesLansdownBase(BaseModel):
     """Base model for Hargreaves Lansdown data."""
 
     data: list[list[str]]
+    portfolio_name: str = "unassigned"
     timestamp: datetime = Field(default_factory=datetime.now)
 
     def get_storage_path(self) -> str:
         """Get the storage path for the data."""
         date_str = self.timestamp.strftime("%Y%m%d")
-        return f"transactions/hargreaves_lansdown/{date_str}/transactions.csv.gz"
+        return (
+            f"transactions/hargreaves_lansdown/{self.portfolio_name}/{date_str}/transactions.csv.gz"
+        )
 
 
 class HargreavesLansdownTransaction(HargreavesLansdownBase):
@@ -54,7 +67,9 @@ class HargreavesLansdownTransaction(HargreavesLansdownBase):
     def get_storage_path(self) -> str:
         """Get the storage path for the transaction data."""
         date_str = self.timestamp.strftime("%Y%m%d")
-        return f"transactions/hargreaves_lansdown/{date_str}/transactions.csv.gz"
+        return (
+            f"transactions/hargreaves_lansdown/{self.portfolio_name}/{date_str}/transactions.csv.gz"
+        )
 
 
 class HargreavesLansdownPosition(HargreavesLansdownBase):
@@ -88,7 +103,7 @@ class HargreavesLansdownPosition(HargreavesLansdownBase):
     def get_storage_path(self) -> str:
         """Get the storage path for the current positions data."""
         date_str = self.timestamp.strftime("%Y%m%d")
-        return f"transactions/hargreaves_lansdown/{date_str}/positions.csv.gz"
+        return f"transactions/hargreaves_lansdown/{self.portfolio_name}/{date_str}/positions.csv.gz"
 
 
 class HargreavesLansdownClosedPosition(HargreavesLansdownBase):
@@ -118,4 +133,4 @@ class HargreavesLansdownClosedPosition(HargreavesLansdownBase):
     def get_storage_path(self) -> str:
         """Get the storage path for the closed positions data."""
         date_str = self.timestamp.strftime("%Y%m%d")
-        return f"transactions/hargreaves_lansdown/{date_str}/closed_positions.csv.gz"
+        return f"transactions/hargreaves_lansdown/{self.portfolio_name}/{date_str}/closed_positions.csv.gz"

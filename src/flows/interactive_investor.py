@@ -1,7 +1,7 @@
 from prefect import flow, get_run_logger
 from prefect_gcp import GcpCredentials
 
-from src.flows.models import Environment, InteractiveInvestorEnvironmentSettings
+from src.flows.models import Environment, SimpleEnvironmentSettings
 from src.ingest.data_sources.interactive_investor.client import InteractiveInvestorClient
 from src.ingest.data_sources.interactive_investor.models import InteractiveInvestorConfig
 from src.ingest.data_sources.interactive_investor.tasks import process_transactions
@@ -22,7 +22,7 @@ async def interactive_investor_transactions_flow(
     gcp_credentials = await GcpCredentials.load("quanterra-gcp-creds")
 
     # Create config
-    env_settings = InteractiveInvestorEnvironmentSettings.get_settings(env)
+    env_settings = SimpleEnvironmentSettings.get_settings(env)
     config = InteractiveInvestorConfig(
         bucket_name=env_settings.bucket_name,
         source_path=transactions_source_path,

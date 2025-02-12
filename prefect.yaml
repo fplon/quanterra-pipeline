@@ -23,8 +23,9 @@ push:
 deployments:
   # Dev deployments
   - name: dev-eodhd-pipeline
-    version: null
-    tags: []
+    tags: 
+      - ingestion
+      - market-data
     description: "Daily EODHD market data ingestion pipeline"
     entrypoint: src.flows.eodhd:eodhd_market_data_flow
     parameters:
@@ -35,8 +36,9 @@ deployments:
       job_variables:
         image: '{{ build_image.image_name }}:{{ build_image.tag }}'
   - name: dev-yf-pipeline
-    version: null
-    tags: []
+    tags: 
+      - ingestion
+      - market-data
     description: "Daily Yahoo Finance market data ingestion pipeline"
     entrypoint: src.flows.yahoo_finance:yahoo_finance_market_data_flow
     parameters:
@@ -47,8 +49,9 @@ deployments:
       job_variables:
         image: '{{ build_image.image_name }}:{{ build_image.tag }}'
   - name: dev-oanda-pipeline
-    version: null
-    tags: []
+    tags: 
+      - ingestion
+      - market-data
     description: "Daily OANDA market data ingestion pipeline"
     entrypoint: src.flows.oanda:oanda_market_data_flow
     parameters:
@@ -62,7 +65,7 @@ deployments:
     tags: 
       - ingestion
       - transactions
-    description: "Daily Interactive Investor transaction ingestion pipeline"
+    description: "Interactive Investor transaction ingestion pipeline"
     entrypoint: src.flows.interactive_investor:interactive_investor_transactions_flow
     parameters:
       env: 'dev'
@@ -73,11 +76,29 @@ deployments:
       work_queue_name: default
       job_variables:
         image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: dev-hargreaves-lansdown-pipeline
+    tags:
+      - ingestion
+      - transactions
+    description: "Hargreaves Lansdown transaction ingestion pipeline"
+    entrypoint: src.flows.hargreaves_lansdown:hargreaves_lansdown_transactions_flow
+    parameters:
+      env: 'dev'
+      # transactions_source_path: ''
+      # positions_source_path: ''
+      # closed_positions_source_path: ''
+      # portfolio_name: ''
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
 
   # Prod deployments
   - name: prod-eodhd-pipeline
-    version: null
-    tags: []
+    tags: 
+      - ingestion
+      - market-data
     description: "Daily EODHD market data ingestion pipeline"
     schedule: {cron: "0 5 * * 2-6"} # Tuesday to Saturday at 5:00 AM
     entrypoint: src.flows.eodhd:eodhd_market_data_flow
@@ -90,8 +111,9 @@ deployments:
       job_variables:
         image: '{{ build_image.image_name }}:{{ build_image.tag }}'
   - name: prod-yf-pipeline
-    version: null
-    tags: []
+    tags: 
+      - ingestion
+      - market-data
     description: "Daily Yahoo Finance market data ingestion pipeline"
     schedule: {cron: "0 5 * * *"}
     entrypoint: src.flows.yahoo_finance:yahoo_finance_market_data_flow
@@ -103,8 +125,9 @@ deployments:
       job_variables:
         image: '{{ build_image.image_name }}:{{ build_image.tag }}'
   - name: prod-oanda-pipeline
-    version: null
-    tags: []
+    tags: 
+      - ingestion
+      - market-data
     description: "Daily OANDA market data ingestion pipeline"
     schedule: {cron: "0 5 * * *"}
     entrypoint: src.flows.oanda:oanda_market_data_flow
@@ -119,11 +142,28 @@ deployments:
     tags: 
       - ingestion
       - transactions
-    description: "Daily Interactive Investor transaction ingestion pipeline"
+    description: "Interactive Investor transaction ingestion pipeline"
     entrypoint: src.flows.interactive_investor:interactive_investor_transactions_flow
     parameters:
       env: 'prod'
       # transactions_source_path: ''
+      # portfolio_name: ''
+    work_pool:
+      name: cloud-run-push-pool
+      work_queue_name: default
+      job_variables:
+        image: '{{ build_image.image_name }}:{{ build_image.tag }}'
+  - name: prod-hargreaves-lansdown-pipeline
+    tags:
+      - ingestion
+      - transactions
+    description: "Hargreaves Lansdown transaction ingestion pipeline"
+    entrypoint: src.flows.hargreaves_lansdown:hargreaves_lansdown_transactions_flow
+    parameters:
+      env: 'prod'
+      # transactions_source_path: ''
+      # positions_source_path: ''
+      # closed_positions_source_path: ''
       # portfolio_name: ''
     work_pool:
       name: cloud-run-push-pool
