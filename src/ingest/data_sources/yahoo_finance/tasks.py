@@ -34,21 +34,24 @@ async def fetch_tickers(config: YahooFinanceConfig, client: YahooFinanceClient) 
     """Fetch and store Yahoo Finance ticker data."""
     logger.info("Fetching Yahoo Finance ticker data")
 
-    try:
-        raw_data = client.get_tickers_data(config.tickers)
-        data = TickerData(
-            data=raw_data,
-            timestamp=datetime.now(),
-            data_type="tickers",
-        )
-        location = StorageLocation(bucket=config.bucket_name, path=data.get_storage_path())
+    for ticker in config.tickers:
+        logger.info(f"Fetching ticker data for {ticker}")
+        try:
+            raw_data = client.get_tickers_data([ticker])
+            data = TickerData(
+                data=raw_data,
+                timestamp=datetime.now(),
+                data_type="tickers",
+                ticker=ticker,
+            )
+            location = StorageLocation(bucket=config.bucket_name, path=data.get_storage_path())
 
-        await store_data(data, location, config)
-        logger.success(f"Stored ticker data at: {location}")
+            await store_data(data, location, config)
+            logger.success(f"Stored ticker data for {ticker} at: {location}")
 
-    except Exception:
-        logger.exception("Error fetching ticker data")
-        raise
+        except Exception:
+            logger.exception(f"Error fetching ticker data for {ticker}")
+            raise
 
 
 @task(name="fetch_yahoo_finance_market_data")
@@ -61,18 +64,21 @@ async def fetch_market_data(
     """Fetch and store Yahoo Finance market data."""
     logger.info("Fetching Yahoo Finance market data")
 
-    try:
-        raw_data = client.get_market_data(config.tickers, period=period, interval=interval)
-        data = MarketData(
-            data=raw_data,
-            timestamp=datetime.now(),
-            data_type="market",
-        )
-        location = StorageLocation(bucket=config.bucket_name, path=data.get_storage_path())
+    for ticker in config.tickers:
+        logger.info(f"Fetching market data for {ticker}")
+        try:
+            raw_data = client.get_market_data([ticker], period=period, interval=interval)
+            data = MarketData(
+                data=raw_data,
+                timestamp=datetime.now(),
+                data_type="market",
+                ticker=ticker,
+            )
+            location = StorageLocation(bucket=config.bucket_name, path=data.get_storage_path())
 
-        await store_data(data, location, config)
-        logger.success(f"Stored market data at: {location}")
+            await store_data(data, location, config)
+            logger.success(f"Stored market data for {ticker} at: {location}")
 
-    except Exception:
-        logger.exception("Error fetching market data")
-        raise
+        except Exception:
+            logger.exception(f"Error fetching market data for {ticker}")
+            raise
