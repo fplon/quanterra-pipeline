@@ -81,7 +81,13 @@ async def process_instruments(
     config: OANDAConfig,
 ) -> None:
     """Process multiple instruments concurrently."""
-    tasks = [process_instrument(client, instrument, config) for instrument in instruments]
+    semaphore = asyncio.Semaphore(32)
+
+    async def sem_task(instrument: str) -> None:
+        async with semaphore:
+            return await process_instrument(client, instrument, config)
+
+    tasks = [sem_task(instrument) for instrument in instruments]
     await asyncio.gather(*tasks, return_exceptions=True)
 
 

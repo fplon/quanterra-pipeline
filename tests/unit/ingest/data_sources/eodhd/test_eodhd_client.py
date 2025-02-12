@@ -182,7 +182,7 @@ async def test_get_bulk_eod(client: EODHDClient) -> None:
     with patch.object(client, "_make_request", mock_request):
         result = await client.get_bulk_eod("NYSE")
         assert result == mock_response
-        mock_request.assert_called_once_with("eod-bulk-last-day/NYSE")
+        mock_request.assert_called_once_with("eod-bulk-last-day/NYSE", {})
 
 
 async def test_get_economic_events(client: EODHDClient) -> None:

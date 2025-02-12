@@ -105,7 +105,7 @@ class TestYahooFinanceClient:
             group_by="ticker",
             auto_adjust=True,
             prepost=True,
-            threads=True,
+            threads=False,
             proxy=None,
             session=mock_session,
             progress=False,
