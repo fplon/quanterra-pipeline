@@ -1,8 +1,7 @@
 name: Deploy Prefect flow - Prod
 
 on:
-  # push: # TODO revert
-  pull_request:
+  push: 
     branches:
       - main
 

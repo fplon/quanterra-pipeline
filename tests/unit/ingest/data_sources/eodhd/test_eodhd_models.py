@@ -177,6 +177,7 @@ class TestExchangeSymbolData:
             data=[],
             timestamp=timestamp,
             exchange="US",
+            data_type="exchange-symbol-list",
         )
 
         path = data.get_storage_path()

@@ -70,7 +70,7 @@ class TestYahooFinanceData:
         )
 
         path = data.get_storage_path()
-        assert path == "yahoo_finance/2024/01/29/test-data.json.gz"
+        assert path == "yahoo_finance/test-data/2024/01/29/BULK.json.gz"
 
 
 class TestTickerData:
@@ -106,7 +106,7 @@ class TestTickerData:
         )
 
         path = data.get_storage_path()
-        assert path == "yahoo_finance/2024/01/29/tickers.json.gz"
+        assert path == "yahoo_finance/tickers/2024/01/29/BULK.json.gz"
 
 
 class TestMarketData:
@@ -142,4 +142,4 @@ class TestMarketData:
         )
 
         path = data.get_storage_path()
-        assert path == "yahoo_finance/2024/01/29/market.json.gz"
+        assert path == "yahoo_finance/market/2024/01/29/BULK.json.gz"
