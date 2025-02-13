@@ -1,8 +1,0 @@
-name: interactive_investor_ingestion
-processors:
-  - type: interactive_investor
-    config: {}
-
-settings:
-  source_path: .notes/tracey_ii_transactions_20241030.csv 
-  bucket_name: ${GCP_BUCKET_NAME}
