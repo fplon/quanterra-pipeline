@@ -27,7 +27,7 @@ deployments:
       - ingestion
       - market-data
     description: "Daily EODHD market data ingestion pipeline"
-    entrypoint: src.flows.eodhd:eodhd_market_data_flow
+    entrypoint: src.orchestration.pipelines.ingest.eodhd_pipeline:eodhd_market_data_flow
     parameters:
       env: 'dev'
     work_pool:
@@ -40,7 +40,7 @@ deployments:
       - ingestion
       - market-data
     description: "Daily Yahoo Finance market data ingestion pipeline"
-    entrypoint: src.flows.yahoo_finance:yahoo_finance_market_data_flow
+    entrypoint: src.orchestration.pipelines.ingest.yahoo_finance_pipeline:yahoo_finance_market_data_flow
     parameters:
       env: 'dev'
     work_pool:
@@ -53,7 +53,7 @@ deployments:
       - ingestion
       - market-data
     description: "Daily OANDA market data ingestion pipeline"
-    entrypoint: src.flows.oanda:oanda_market_data_flow
+    entrypoint: src.orchestration.pipelines.ingest.oanda_pipeline:oanda_market_data_flow
     parameters:
       env: 'dev'
     work_pool:
@@ -66,7 +66,7 @@ deployments:
       - ingestion
       - transactions
     description: "Interactive Investor transaction ingestion pipeline"
-    entrypoint: src.flows.interactive_investor:interactive_investor_transactions_flow
+    entrypoint: src.orchestration.pipelines.ingest.interactive_investor_pipeline:interactive_investor_transactions_flow
     parameters:
       env: 'dev'
       # transactions_source_path: ''
@@ -81,7 +81,7 @@ deployments:
       - ingestion
       - transactions
     description: "Hargreaves Lansdown transaction ingestion pipeline"
-    entrypoint: src.flows.hargreaves_lansdown:hargreaves_lansdown_transactions_flow
+    entrypoint: src.orchestration.pipelines.ingest.hargreaves_lansdown_pipeline:hargreaves_lansdown_transactions_flow
     parameters:
       env: 'dev'
       # transactions_source_path: ''
@@ -101,7 +101,7 @@ deployments:
       - market-data
     description: "Daily EODHD market data ingestion pipeline"
     schedule: {cron: "0 5 * * 2-6"} # Tuesday to Saturday at 5:00 AM
-    entrypoint: src.flows.eodhd:eodhd_market_data_flow
+    entrypoint: src.orchestration.pipelines.ingest.eodhd_pipeline:eodhd_market_data_flow
     parameters:
       env: 'prod'
     work_pool:
@@ -115,7 +115,7 @@ deployments:
       - market-data
     description: "Daily Yahoo Finance market data ingestion pipeline"
     schedule: {cron: "0 5 * * *"}
-    entrypoint: src.flows.yahoo_finance:yahoo_finance_market_data_flow
+    entrypoint: src.orchestration.pipelines.ingest.yahoo_finance_pipeline:yahoo_finance_market_data_flow
     parameters:
       env: 'prod'
     work_pool:
@@ -129,7 +129,7 @@ deployments:
       - market-data
     description: "Daily OANDA market data ingestion pipeline"
     schedule: {cron: "0 5 * * *"}
-    entrypoint: src.flows.oanda:oanda_market_data_flow
+    entrypoint: src.orchestration.pipelines.ingest.oanda_pipeline:oanda_market_data_flow
     parameters:
       env: 'prod'
     work_pool:
@@ -142,7 +142,7 @@ deployments:
       - ingestion
       - transactions
     description: "Interactive Investor transaction ingestion pipeline"
-    entrypoint: src.flows.interactive_investor:interactive_investor_transactions_flow
+    entrypoint: src.orchestration.pipelines.ingest.interactive_investor_pipeline:interactive_investor_transactions_flow
     parameters:
       env: 'prod'
       # transactions_source_path: ''
@@ -157,7 +157,7 @@ deployments:
       - ingestion
       - transactions
     description: "Hargreaves Lansdown transaction ingestion pipeline"
-    entrypoint: src.flows.hargreaves_lansdown:hargreaves_lansdown_transactions_flow
+    entrypoint: src.orchestration.pipelines.ingest.hargreaves_lansdown_pipeline:hargreaves_lansdown_transactions_flow
     parameters:
       env: 'prod'
       # transactions_source_path: ''
