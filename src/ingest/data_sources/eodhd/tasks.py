@@ -131,13 +131,12 @@ async def process_exchange_symbols(
 async def fetch_exchange_symbols(
     config: EODHDConfig,
     client: EODHDClient,
-    exchanges: list[str] | None = None,
+    exchanges: list[str],
 ) -> list[str]:
     """Fetch and store EODHD exchange symbols."""
     logger.info("Fetching EODHD exchange symbols data")
 
-    exchanges_to_fetch = config.exchanges or exchanges or []
-    return await process_exchange_symbols(config, client, exchanges_to_fetch)
+    return await process_exchange_symbols(config, client, exchanges)
 
 
 async def process_exchange_bulk(
@@ -190,13 +189,12 @@ async def process_exchange_bulk_data(
 async def fetch_exchange_bulk(
     config: EODHDConfig,
     client: EODHDClient,
-    exchanges: list[str] | None = None,
+    exchanges: list[str],
 ) -> None:
     """Fetch and store EODHD exchange bulk data - eod, dividends, splits."""
     logger.info("Fetching EODHD exchange bulk data")
 
-    exchanges_to_fetch = config.exchanges or exchanges or []
-    await process_exchange_bulk_data(config, client, exchanges_to_fetch)
+    await process_exchange_bulk_data(config, client, exchanges)
 
 
 async def process_instrument(
@@ -254,13 +252,12 @@ async def process_instruments(
 async def fetch_instruments(
     config: EODHDConfig,
     client: EODHDClient,
-    instruments: list[str] | None = None,
+    instruments: list[str],
 ) -> None:
     """Fetch and store EODHD instruments."""
     logger.info("Fetching EODHD instruments data")
 
-    instruments_to_fetch = config.instruments or instruments or []
-    await process_instruments(config, client, instruments_to_fetch)
+    await process_instruments(config, client, instruments)
 
 
 async def process_macro_indicator(

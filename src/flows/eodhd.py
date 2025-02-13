@@ -16,15 +16,7 @@ from src.ingest.data_sources.eodhd.tasks import (
 
 
 @flow(name="eodhd_market_data")
-async def eodhd_market_data_flow(
-    env: str = "dev",
-    run_exchages: bool = True,
-    run_exchange_symbols: bool = True,
-    run_exchange_bulk: bool = True,
-    run_instruments: bool = True,
-    run_macro_indicators: bool = True,
-    run_economic_events: bool = True,
-) -> None:
+async def eodhd_market_data_flow(env: str = "dev") -> None:
     """Flow for fetching EODHD market data."""
     logger = get_run_logger()
     env = Environment(env)
@@ -40,6 +32,7 @@ async def eodhd_market_data_flow(
         api_key=eodhd_api_key.get(),
         base_url="https://eodhd.com/api/",
         exchanges=env_settings.exchanges,
+        exchanges_bulk=env_settings.exchanges_bulk,
         instruments=env_settings.instruments,
         macro_indicators=env_settings.macro_indicators,
         macro_countries=env_settings.macro_countries,
@@ -54,29 +47,34 @@ async def eodhd_market_data_flow(
     )
 
     # Fetch exchanges
-    if run_exchages:
-        exchanges = await fetch_exchanges(config, client)
-    else:
-        exchanges = config.exchanges
+    exchanges = await fetch_exchanges(config, client)
 
-    # Fetch exchange symbols
-    if run_exchange_symbols:
-        exchange_symbols = await fetch_exchange_symbols(config, client, exchanges)
-    else:
-        exchange_symbols = config.instruments
+    # Fetch exchange symbols - defualt to config exchanges
+    config_exchanges = config.exchanges + config.exchanges_bulk
+    exchange_symbols = await fetch_exchange_symbols(config, client, config_exchanges or exchanges)
 
-    # Fetch exchange bulk data
-    if run_exchange_bulk:
-        await fetch_exchange_bulk(config, client, exchanges)
+    # Fetch exchange bulk data - defualt to config bulk exchanges
+    await fetch_exchange_bulk(config, client, config.exchanges_bulk or exchanges)
 
-    # Fetch instrument-level data
-    if run_instruments:
-        await fetch_instruments(config, client, exchange_symbols)
+    # Fetch instrument-level data - defualt to config instruments otherwise filter exchange symbols
+    await fetch_instruments(
+        config,
+        client,
+        config.instruments or filter_exchange_symbols(exchange_symbols, config.exchanges),
+    )
 
     # Fetch macro indicators
-    if run_macro_indicators:
-        await fetch_macro_indicators(config, client)
+    await fetch_macro_indicators(config, client)
 
     # Fetch economic events
-    if run_economic_events:
-        await fetch_economic_events(config, client)
+    await fetch_economic_events(config, client)
+
+
+def filter_exchange_symbols(exchange_symbols: list[str], config_exchanges: list[str]) -> list[str]:
+    """Filter exchange symbols to only include those that match the config exchanges."""
+    filtered_exchange_symbols: list[str] = []
+    for exchange in config_exchanges:
+        for symbol in exchange_symbols:
+            if f".{exchange}" in symbol:
+                filtered_exchange_symbols.append(symbol)
+    return filtered_exchange_symbols

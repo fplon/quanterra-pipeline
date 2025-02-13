@@ -14,6 +14,7 @@ class EODHDConfig(BaseModel):
     base_url: str
     bucket_name: str
     exchanges: list[str] = Field(default_factory=list)
+    exchanges_bulk: list[str] = Field(default_factory=list)
     instruments: list[str] = Field(default_factory=list)
     macro_indicators: list[str] = Field(default_factory=list)
     macro_countries: list[str] = Field(default_factory=list)

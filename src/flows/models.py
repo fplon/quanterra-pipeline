@@ -37,6 +37,7 @@ class SimpleEnvironmentSettings(BaseEnvironmentSettings[BaseFlowSettings]):
 
 class EODHDFlowSettings(BaseFlowSettings):
     exchanges: list[str]
+    exchanges_bulk: list[str]
     instruments: list[str]
     macro_indicators: list[str]
     macro_countries: list[str]
@@ -45,7 +46,8 @@ class EODHDFlowSettings(BaseFlowSettings):
 class EODHDEnvironmentSettings(BaseEnvironmentSettings[EODHDFlowSettings]):
     _settings = {
         Environment.DEV: EODHDFlowSettings(
-            exchanges=["EUFUND", "INDX"],
+            exchanges=["XETRA"],
+            exchanges_bulk=["TO"],
             instruments=["AAPL.US", "GB00B9876293.EUFUND", "GB00BG0QPQ07.EUFUND", "IXIC.INDX"],
             macro_indicators=[
                 "unemployment_total_percent",
@@ -57,11 +59,15 @@ class EODHDEnvironmentSettings(BaseEnvironmentSettings[EODHDFlowSettings]):
         ),
         Environment.PROD: EODHDFlowSettings(
             exchanges=[
+                "INDX",
+                "EUFUND",
+            ],
+            exchanges_bulk=[
                 "US",
                 "LSE",
                 "XETRA",
-                "EUFUND",
-                "INDX",
+                # "EUFUND",
+                # "INDX",
             ],
             instruments=[],  # Get all instruments for the above exchanges
             macro_indicators=[
