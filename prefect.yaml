@@ -104,7 +104,6 @@ deployments:
     entrypoint: src.flows.eodhd:eodhd_market_data_flow
     parameters:
       env: 'prod'
-      run_instruments: false
     work_pool:
       name: cloud-run-push-pool
       work_queue_name: default
