@@ -3,7 +3,7 @@ from datetime import datetime
 from loguru import logger  # TODO replace with Prefect logging
 from prefect import task
 
-from clients.file.base_csv_client import BaseCSVFileClient
+from src.clients.file.base_csv_client import BaseCSVFileClient
 from src.clients.google_cloud_storage_client import GCPStorageClient
 from src.models.config.pipeline_settings import StorageLocation
 from src.models.config.processor_settings import HargreavesLansdownConfig

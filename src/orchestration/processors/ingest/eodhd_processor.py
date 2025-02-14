@@ -4,7 +4,7 @@ from datetime import datetime
 from loguru import logger
 from prefect import task
 
-from clients.api.eodhd_client import EODHDClient
+from src.clients.api.eodhd_client import EODHDClient
 from src.clients.google_cloud_storage_client import GCPStorageClient
 from src.models.config.pipeline_settings import StorageLocation
 from src.models.config.processor_settings import EODHDConfig

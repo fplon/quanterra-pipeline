@@ -3,7 +3,7 @@ import asyncio
 from prefect import flow, get_run_logger
 from prefect_gcp import GcpCredentials
 
-from clients.file.base_csv_client import BaseCSVFileClient
+from src.clients.file.base_csv_client import BaseCSVFileClient
 from src.models.config.pipeline_settings import Environment, SimpleEnvironmentSettings
 from src.models.config.processor_settings import HargreavesLansdownConfig
 from src.orchestration.processors.ingest.hargreaves_lansdown_processor import (
