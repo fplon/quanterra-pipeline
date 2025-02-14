@@ -1,15 +1,15 @@
-from dataclasses import dataclass
 from typing import cast
 
-from src.clients.abstract.base_api_client import BaseAPIClient
+from clients.api.base_api_client import BaseAPIClient
 from src.models.data.json_objects import JSONType  # TODO better implementation
 
 
-@dataclass
 class OANDAClient(BaseAPIClient):
     """OANDA API client for making HTTP requests."""
 
-    account_id: str  # Additional field specific to OANDA
+    def __init__(self, api_key: str, base_url: str, account_id: str) -> None:
+        super().__init__(api_key, base_url)
+        self.account_id = account_id
 
     async def get_instruments(self) -> JSONType:
         """Get list of available instruments."""

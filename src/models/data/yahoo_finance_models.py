@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from src.models.data.json_objects import JSONType  # TODO better implementation
-from src.utils.utillities import convert_to_json_safe
+from src.utils.utilities import convert_to_json_safe
 
 
 class YahooFinanceData(BaseModel):

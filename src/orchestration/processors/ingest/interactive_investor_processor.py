@@ -3,8 +3,8 @@ from datetime import datetime
 from loguru import logger
 from prefect import task
 
+from clients.file.base_csv_client import BaseCSVFileClient
 from src.clients.google_cloud_storage_client import GCPStorageClient
-from src.clients.interactive_investor_client import InteractiveInvestorClient
 from src.models.config.pipeline_settings import StorageLocation
 from src.models.config.processor_settings import InteractiveInvestorConfig
 from src.models.data.interactive_investor_models import (
@@ -14,7 +14,6 @@ from src.models.data.interactive_investor_models import (
 
 @task(name="store_interactive_investor_data", retries=3)
 async def store_data(
-    data: InteractiveInvestorTransaction,
     location: StorageLocation,
     config: InteractiveInvestorConfig,
 ) -> None:
@@ -30,18 +29,18 @@ async def store_data(
 
 @task(name="process_interactive_investor_transactions")
 async def process_transactions(
-    config: InteractiveInvestorConfig, client: InteractiveInvestorClient
+    config: InteractiveInvestorConfig, client: BaseCSVFileClient
 ) -> None:
     """Process and store Interactive Investor transaction data."""
     logger.info("Processing Interactive Investor transaction data")
     try:
         # Validate file format
-        if not client.validate_file_type():
+        if not client.validate_file_type(config.source_path):
             raise ValueError("Invalid Interactive Investor CSV file format")
 
         # Preview data for validation
         # TODO not sure is this is needed - dependency created though into StorageLocation
-        preview_data = client.preview_file()
+        preview_data = client.preview_file(config.source_path)
         data = InteractiveInvestorTransaction(
             data=preview_data,
             portfolio_name=config.portfolio_name,
@@ -55,7 +54,7 @@ async def process_transactions(
         )
 
         # Store the CSV file with compression
-        await store_data(data, location, config)
+        await store_data(location, config)
 
         logger.success(f"Stored Interactive Investor transaction data at: {location}")
     except Exception:

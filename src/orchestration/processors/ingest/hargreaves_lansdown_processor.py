@@ -3,8 +3,8 @@ from datetime import datetime
 from loguru import logger  # TODO replace with Prefect logging
 from prefect import task
 
+from clients.file.base_csv_client import BaseCSVFileClient
 from src.clients.google_cloud_storage_client import GCPStorageClient
-from src.clients.hargreaves_lansdown_client import HargreavesLansdownClient
 from src.models.config.pipeline_settings import StorageLocation
 from src.models.config.processor_settings import HargreavesLansdownConfig
 from src.models.data.hargreaves_lansdown_models import (
@@ -31,22 +31,14 @@ async def store_data(
 
 
 @task(name="process_hargreaves_lansdown_transactions")
-async def process_transactions(
-    config: HargreavesLansdownConfig, client: HargreavesLansdownClient
-) -> None:
+async def process_transactions(config: HargreavesLansdownConfig, client: BaseCSVFileClient) -> None:
     """Process and store Hargreaves Lansdown transaction data."""
     logger.info("Processing Hargreaves Lansdown transaction data")
     try:
-        # TODO I don't like this setting and resetting the source path
-        if config.transactions_source_path is None:
-            raise ValueError("Transactions source path is not set")
-        client.set_source_path(config.transactions_source_path)
-
-        if not client.validate_file_type():
+        if not client.validate_file_type(config.transactions_source_path):
             raise ValueError("Invalid Hargreaves Lansdown CSV file format")
 
-        # TODO not sure is this is needed - dependency created though into StorageLocation
-        preview_data = client.preview_file()
+        preview_data = client.preview_file(config.transactions_source_path)
         data = HargreavesLansdownTransaction(
             data=preview_data,
             portfolio_name=config.portfolio_name,
@@ -66,21 +58,14 @@ async def process_transactions(
 
 
 @task(name="process_hargreaves_lansdown_positions")
-async def process_positions(
-    config: HargreavesLansdownConfig, client: HargreavesLansdownClient
-) -> None:
+async def process_positions(config: HargreavesLansdownConfig, client: BaseCSVFileClient) -> None:
     """Process and store Hargreaves Lansdown positions data."""
     logger.info("Processing Hargreaves Lansdown positions data")
     try:
-        # TODO I don't like this setting and resetting the source path - could also causa problems async if same client
-        if config.positions_source_path is None:
-            raise ValueError("Positions source path is not set")
-        client.set_source_path(config.positions_source_path)
-
-        if not client.validate_file_type():
+        if not client.validate_file_type(config.positions_source_path):
             raise ValueError("Invalid Hargreaves Lansdown CSV file format")
 
-        preview_data = client.preview_file()
+        preview_data = client.preview_file(config.positions_source_path)
         data = HargreavesLansdownPosition(
             data=preview_data,
             portfolio_name=config.portfolio_name,
@@ -101,20 +86,15 @@ async def process_positions(
 
 @task(name="process_hargreaves_lansdown_closed_positions")
 async def process_closed_positions(
-    config: HargreavesLansdownConfig, client: HargreavesLansdownClient
+    config: HargreavesLansdownConfig, client: BaseCSVFileClient
 ) -> None:
     """Process and store Hargreaves Lansdown closed positions data."""
     logger.info("Processing Hargreaves Lansdown closed positions data")
     try:
-        # TODO I don't like this setting and resetting the source path - could also causa problems async if same client
-        if config.closed_positions_source_path is None:
-            raise ValueError("Closed positions source path is not set")
-
-        client.set_source_path(config.closed_positions_source_path)
-        if not client.validate_file_type():
+        if not client.validate_file_type(config.closed_positions_source_path):
             raise ValueError("Invalid Hargreaves Lansdown CSV file format")
 
-        preview_data = client.preview_file()
+        preview_data = client.preview_file(config.closed_positions_source_path)
         data = HargreavesLansdownClosedPosition(
             data=preview_data,
             portfolio_name=config.portfolio_name,
