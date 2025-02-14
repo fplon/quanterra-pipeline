@@ -1,6 +1,6 @@
 from typing import cast
 
-from clients.api.base_api_client import BaseAPIClient
+from src.clients.api.base_api_client import BaseAPIClient
 from src.models.data.json_objects import JSONType  # TODO better implementation
 
 
