@@ -1,13 +1,14 @@
-from dataclasses import dataclass
 from typing import Optional, cast
 
-from src.clients.abstract.base_api_client import BaseAPIClient
+from clients.api.base_api_client import BaseAPIClient
 from src.models.data.json_objects import JSONType  # TODO better implementation
 
 
-@dataclass
 class EODHDClient(BaseAPIClient):
     """EODHD API client for making HTTP requests."""
+
+    def __init__(self, api_key: str, base_url: str) -> None:
+        super().__init__(api_key, base_url)
 
     def _prepare_request_params(
         self, params: dict[str, str | int] | None = None

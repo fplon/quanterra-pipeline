@@ -1,7 +1,7 @@
 from prefect import flow, get_run_logger
 from prefect_gcp import GcpCredentials
 
-from src.clients.interactive_investor_client import InteractiveInvestorClient
+from clients.file.base_csv_client import BaseCSVFileClient
 from src.models.config.pipeline_settings import Environment, SimpleEnvironmentSettings
 from src.models.config.processor_settings import InteractiveInvestorConfig
 from src.orchestration.processors.ingest.interactive_investor_processor import process_transactions
@@ -31,7 +31,7 @@ async def interactive_investor_transactions_flow(
     )
 
     # Create a single client instance
-    client = InteractiveInvestorClient(source_path=config.source_path)
+    client = BaseCSVFileClient()
 
     # Process transactions
     await process_transactions(config, client)

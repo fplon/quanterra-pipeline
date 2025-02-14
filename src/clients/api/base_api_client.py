@@ -1,23 +1,16 @@
-from dataclasses import dataclass
-
 import httpx
 from httpx import Response
-from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from src.utils.utillities import log_retry_attempt
+from src.utils.utilities import log_retry_attempt
 
 
-@dataclass
 class BaseAPIClient:
     """Base API client for making HTTP requests."""
 
-    api_key: str
-    base_url: str
-
-    def __post_init__(self) -> None:
-        """Remove trailing slash from base_url if present."""
-        self.base_url = self.base_url.rstrip("/")
+    def __init__(self, api_key: str, base_url: str) -> None:
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
 
     def _prepare_request_params(
         self, params: dict[str, str | int] | None = None
@@ -42,25 +35,7 @@ class BaseAPIClient:
         prepared_params = self._prepare_request_params(params)
         url = f"{self.base_url}/{endpoint}"
 
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    url, params=prepared_params, headers=self._get_headers()
-                )
-                response.raise_for_status()
-                return response
-
-        except httpx.TimeoutException as e:
-            # TODO logging decision
-            logger.warning(f"Request timeout for {endpoint}: {str(e)}")
-            raise
-
-        except httpx.HTTPError as e:
-            # TODO logging decision
-            logger.error(f"HTTP error for {endpoint}: {str(e)}")
-            raise
-
-        except Exception as e:
-            # TODO logging decision
-            logger.error(f"Unexpected error for {endpoint}: {str(e)}")
-            raise
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(url, params=prepared_params, headers=self._get_headers())
+            response.raise_for_status()
+            return response

@@ -4,7 +4,7 @@ import httpx
 import pytest
 from tenacity import RetryError
 
-from src.clients.oanda_client import OANDAClient
+from clients.api.oanda_client import OANDAClient
 
 pytestmark = pytest.mark.asyncio
 

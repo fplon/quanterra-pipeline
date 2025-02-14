@@ -2,7 +2,7 @@ from prefect import flow, get_run_logger
 from prefect.blocks.system import Secret
 from prefect_gcp import GcpCredentials
 
-from src.clients.oanda_client import OANDAClient
+from clients.api.oanda_client import OANDAClient
 from src.models.config.pipeline_settings import Environment, OANDAEnvironmentSettings
 from src.models.config.processor_settings import OANDAConfig
 from src.orchestration.processors.ingest.oanda_processor import (

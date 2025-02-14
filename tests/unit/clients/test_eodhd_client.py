@@ -4,7 +4,7 @@ import httpx
 import pytest
 from tenacity import RetryError
 
-from src.clients.eodhd_client import EODHDClient
+from clients.api.eodhd_client import EODHDClient
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,7 +2,7 @@ from prefect import flow, get_run_logger
 from prefect.blocks.system import Secret
 from prefect_gcp import GcpCredentials
 
-from src.clients.eodhd_client import EODHDClient
+from clients.api.eodhd_client import EODHDClient
 from src.models.config.pipeline_settings import Environment, EODHDEnvironmentSettings
 from src.models.config.processor_settings import EODHDConfig
 from src.orchestration.processors.ingest.eodhd_processor import (

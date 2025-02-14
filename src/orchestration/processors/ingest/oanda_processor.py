@@ -4,8 +4,8 @@ from datetime import datetime
 from loguru import logger
 from prefect import task
 
+from clients.api.oanda_client import OANDAClient
 from src.clients.google_cloud_storage_client import GCPStorageClient
-from src.clients.oanda_client import OANDAClient
 from src.models.config.pipeline_settings import StorageLocation
 from src.models.config.processor_settings import OANDAConfig
 from src.models.data.oanda_models import CandlesData, InstrumentsData
