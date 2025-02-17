@@ -13,9 +13,10 @@ from src.models.config.pipeline_settings import Environment
 
 @click.group()
 @click.version_option()
-def cli():
+@click.option("--env", type=click.Choice(["dev", "prod"]), default="prod")
+def cli(env: str = "prod"):
     """CLI for uploading transaction files to Quanterra datalake"""
-    updater = CLIToolUpdater(bucket_name="datalake-dev-bronze")  # TODO update if changing
+    updater = CLIToolUpdater(bucket_name=f"datalake-{env}-cli-tool-config")
     updater.check_for_updates()
 
 
@@ -25,12 +26,11 @@ def _upload_to_gcs(source_path: Path, env: Environment) -> str:
         raise FileNotFoundError(f"File not found: {source_path}")
 
     client = GCPStorageClient()
-    gcs_path = f"temp_uploads/{datetime.now().isoformat()}/{source_path.name}"
+    gcs_path = f"transactions_cli_uploads/{datetime.now().isoformat()}/{source_path.name}"
 
     client.store_csv_file(
         source_path=str(source_path),
-        # TODO update with staging bucket once its set up
-        bucket_name="datalake-dev-bronze" if env == Environment.DEV else "datalake-prod-bronze",
+        bucket_name="datalake-dev-landing" if env == Environment.DEV else "datalake-prod-landing",
         blob_path=gcs_path,
         compress=False,
     )
@@ -57,11 +57,12 @@ def trigger_prefect_flow(flow: str, deployment: str, parameters: PrefectFlowPara
 
 
 @cli.command()
-@click.option("--env", type=click.Choice(["dev", "prod"]), default="dev")
+@click.pass_context
 @click.option("--portfolio-name", required=True, help="Name of the portfolio")
 @click.option("--transactions-path", required=True, type=Path, help="Path to transactions CSV")
-def interactive_investor(env: str, portfolio_name: str, transactions_path: Path):
+def interactive_investor(ctx, portfolio_name: str, transactions_path: Path):
     """Upload Interactive Investor transactions"""
+    env = ctx.parent.params["env"]
     env_enum = Environment(env)
     gcs_path = _upload_to_gcs(transactions_path, env_enum)
 
@@ -78,7 +79,7 @@ def interactive_investor(env: str, portfolio_name: str, transactions_path: Path)
 
 
 @cli.command()
-@click.option("--env", type=click.Choice(["dev", "prod"]), default="dev")
+@click.pass_context
 @click.option("--portfolio-name", required=True, help="Name of the portfolio")
 @click.option("--transactions-path", required=True, type=Path, help="Path to transactions CSV")
 @click.option("--positions-path", required=True, type=Path, help="Path to positions CSV")
@@ -86,13 +87,14 @@ def interactive_investor(env: str, portfolio_name: str, transactions_path: Path)
     "--closed-positions-path", required=True, type=Path, help="Path to closed positions CSV"
 )
 def hargreaves_lansdown(
-    env: str,
+    ctx,
     portfolio_name: str,
     transactions_path: Path,
     positions_path: Path,
     closed_positions_path: Path,
 ):
     """Upload Hargreaves Lansdown transactions"""
+    env = ctx.parent.params["env"]
     env_enum = Environment(env)
 
     paths = {
