@@ -3,7 +3,7 @@ from datetime import datetime
 from loguru import logger
 from prefect import task
 
-from src.clients.file.base_csv_client import BaseCSVFileClient
+from src.clients.file.google_cloud_file_client import GoogleCloudFileClient
 from src.clients.google_cloud_storage_client import GCPStorageClient
 from src.models.config.pipeline_settings import StorageLocation
 from src.models.config.processor_settings import InteractiveInvestorConfig
@@ -19,17 +19,19 @@ async def store_data(
 ) -> None:
     """Store Interactive Investor data in Google Cloud Storage."""
     storage_client = GCPStorageClient(credentials=config.gcp_credentials)
-    storage_client.store_csv_file(
-        source_path=config.source_path,
-        bucket_name=location.bucket,
-        blob_path=location.path,
+    # TODO better transfer bucket to bucket
+    storage_client.store_csv_file_from_blob(
+        source_bucket_name=location.bucket,  # TODO make discinct in case different buckets used
+        source_blob_path=config.source_path,
+        target_bucket_name=location.bucket,
+        target_blob_path=location.path,
         compress=True,
     )
 
 
 @task(name="process_interactive_investor_transactions")
 async def process_transactions(
-    config: InteractiveInvestorConfig, client: BaseCSVFileClient
+    config: InteractiveInvestorConfig, client: GoogleCloudFileClient
 ) -> None:
     """Process and store Interactive Investor transaction data."""
     logger.info("Processing Interactive Investor transaction data")

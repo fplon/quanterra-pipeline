@@ -3,7 +3,7 @@ from datetime import datetime
 from loguru import logger  # TODO replace with Prefect logging
 from prefect import task
 
-from src.clients.file.base_csv_client import BaseCSVFileClient
+from src.clients.file.google_cloud_file_client import GoogleCloudFileClient
 from src.clients.google_cloud_storage_client import GCPStorageClient
 from src.models.config.pipeline_settings import StorageLocation
 from src.models.config.processor_settings import HargreavesLansdownConfig
@@ -22,16 +22,19 @@ async def store_data(
 ) -> None:
     """Store Hargreaves Lansdown data in Google Cloud Storage."""
     storage_client = GCPStorageClient(credentials=config.gcp_credentials)
-    storage_client.store_csv_file(
-        source_path=source_path,  # slightly different to II
-        bucket_name=location.bucket,
-        blob_path=location.path,
+    storage_client.store_csv_file_from_blob(
+        source_bucket_name=location.bucket,  # TODO make discinct in case different buckets used
+        source_blob_path=source_path,  # slightly different to II
+        target_bucket_name=location.bucket,
+        target_blob_path=location.path,
         compress=True,
     )
 
 
 @task(name="process_hargreaves_lansdown_transactions")
-async def process_transactions(config: HargreavesLansdownConfig, client: BaseCSVFileClient) -> None:
+async def process_transactions(
+    config: HargreavesLansdownConfig, client: GoogleCloudFileClient
+) -> None:
     """Process and store Hargreaves Lansdown transaction data."""
     logger.info("Processing Hargreaves Lansdown transaction data")
     try:
@@ -58,7 +61,9 @@ async def process_transactions(config: HargreavesLansdownConfig, client: BaseCSV
 
 
 @task(name="process_hargreaves_lansdown_positions")
-async def process_positions(config: HargreavesLansdownConfig, client: BaseCSVFileClient) -> None:
+async def process_positions(
+    config: HargreavesLansdownConfig, client: GoogleCloudFileClient
+) -> None:
     """Process and store Hargreaves Lansdown positions data."""
     logger.info("Processing Hargreaves Lansdown positions data")
     try:
@@ -86,7 +91,7 @@ async def process_positions(config: HargreavesLansdownConfig, client: BaseCSVFil
 
 @task(name="process_hargreaves_lansdown_closed_positions")
 async def process_closed_positions(
-    config: HargreavesLansdownConfig, client: BaseCSVFileClient
+    config: HargreavesLansdownConfig, client: GoogleCloudFileClient
 ) -> None:
     """Process and store Hargreaves Lansdown closed positions data."""
     logger.info("Processing Hargreaves Lansdown closed positions data")
