@@ -14,7 +14,7 @@ def mock_gcp_storage_client():
 
 @pytest.fixture
 def tool_updater():
-    return CLIToolUpdater("datalake-dev-bronze")
+    return CLIToolUpdater("datalake-dev-cli-tool-config")
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def new_version():
 
 class TestCLIToolUpdater:
     def test_initialisation(self, tool_updater) -> None:
-        assert tool_updater.bucket.name == "datalake-dev-bronze"
+        assert tool_updater.bucket.name == "datalake-dev-cli-tool-config"
         assert tool_updater.install_path == os.path.expanduser("~/.quanterra-cli")
 
     def test_get_latest_version(self, tool_updater) -> None:
@@ -35,7 +35,7 @@ class TestCLIToolUpdater:
     def test__get_current_version(self, tool_updater) -> None:
         current_version = tool_updater._get_current_version()
         assert isinstance(current_version, str)
-        assert current_version == "0.0.0"
+        assert current_version == "0.1.0"
 
     def test__perform_update(self, tool_updater, new_version) -> None:
         tool_updater._perform_update(new_version)
