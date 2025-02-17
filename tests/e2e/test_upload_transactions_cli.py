@@ -23,9 +23,9 @@ def test_interactive_investor_upload(runner: CliRunner) -> None:
     result = runner.invoke(
         cli,
         [
-            "interactive-investor",
             "--env",
             "dev",
+            "interactive-investor",
             "--portfolio-name",
             portfolio_name,
             "--transactions-path",
@@ -51,9 +51,9 @@ async def test_hargreaves_lansdown_upload(runner: CliRunner) -> None:
     result = runner.invoke(
         cli,
         [
-            "hargreaves-lansdown",
             "--env",
             "dev",
+            "hargreaves-lansdown",
             "--portfolio-name",
             portfolio_name,
             "--transactions-path",

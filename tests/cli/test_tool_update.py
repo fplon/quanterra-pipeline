@@ -22,6 +22,9 @@ def new_version():
     return "0.1.0"
 
 
+# TODO this is currently testing live connections - need to mock out
+
+
 class TestCLIToolUpdater:
     def test_initialisation(self, tool_updater) -> None:
         assert tool_updater.bucket.name == "datalake-dev-cli-tool-config"
