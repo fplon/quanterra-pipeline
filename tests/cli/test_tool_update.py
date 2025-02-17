@@ -1,4 +1,5 @@
 import os
+import re
 from unittest.mock import patch
 
 import pytest
@@ -31,13 +32,15 @@ class TestCLIToolUpdater:
         assert tool_updater.install_path == os.path.expanduser("~/.quanterra-cli")
 
     def test_get_latest_version(self, tool_updater) -> None:
-        version = tool_updater.get_latest_version()
-        assert isinstance(version, str)
-        assert version == "0.1.0"  # TODO regex this
+        latest_version = tool_updater.get_latest_version()
+        assert isinstance(latest_version, str)
+        assert re.match(r"^\d+\.\d+\.\d+$", latest_version)
+        assert latest_version > "0.1.0"
 
     def test__get_current_version(self, tool_updater) -> None:
         current_version = tool_updater._get_current_version()
         assert isinstance(current_version, str)
+        assert re.match(r"^\d+\.\d+\.\d+$", current_version)
         assert current_version == "0.1.0"
 
     def test__perform_update(self, tool_updater, new_version) -> None:

@@ -13,15 +13,11 @@ class CLIToolUpdater:
         self.bucket = self.client._client.bucket(bucket_name)
         self.install_path = os.path.expanduser("~/.quanterra-cli")
 
-    def get_latest_version(self) -> str:
-        blob = self.bucket.blob("latest_version.json")
-        version_info = json.loads(blob.download_as_string())
-        return version_info["version"]
-
     def check_for_updates(self) -> None:
+        """Check for updates and perform an update if available."""
         try:
             current_version = self._get_current_version()
-            latest_version = self.get_latest_version()
+            latest_version = self._get_latest_version()
 
             if version.parse(latest_version) > version.parse(current_version):
                 print(f"New version {latest_version} available. Current version: {current_version}")
@@ -30,7 +26,14 @@ class CLIToolUpdater:
         except Exception as e:
             print(f"Failed to check for updates: {e}")
 
+    def _get_latest_version(self) -> str:
+        """Get the latest version from the bucket."""
+        blob = self.bucket.blob("latest_version.json")
+        version_info = json.loads(blob.download_as_string())
+        return version_info["version"]
+
     def _get_current_version(self) -> str:
+        """Get the current version from the local version file."""
         version_file = os.path.join(self.install_path, "version.txt")
         if os.path.exists(version_file):
             with open(version_file, "r") as f:
