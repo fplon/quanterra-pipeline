@@ -1618,8 +1618,9 @@ wheels = [
 [[package]]
 name = "quanterra-pipeline"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "google-cloud-storage" },
     { name = "httpx" },
     { name = "loguru" },
@@ -1645,6 +1646,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.1.8" },
     { name = "google-cloud-storage", specifier = ">=2.19.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.3" },

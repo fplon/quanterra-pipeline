@@ -1,0 +1,59 @@
+name: CLI Deploy
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  ENVIRONMENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+
+jobs:
+  cli-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'gsutil'
+
+      - name: Build package
+        run: |
+          uv build
+          ls -la dist/
+
+      - name: Upload package
+        run: |
+          gsutil cp dist/quanterra_pipeline-*.tar.gz gs://datalake-${{ env.ENVIRONMENT }}-cli-tool-config/versions/
+
+      - name: Update version file
+        run: |
+          echo '{
+            "version": "'$(uv pip show quanterra-pipeline | grep Version | cut -d' ' -f2)'",
+            "release_date": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+          }' > latest_version.json
+          gsutil -h "Content-Type:application/json" cp latest_version.json gs://datalake-${{ env.ENVIRONMENT }}-cli-tool-config/

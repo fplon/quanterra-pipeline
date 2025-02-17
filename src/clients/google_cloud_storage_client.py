@@ -117,3 +117,47 @@ class GCPStorageClient:
         else:
             blob.content_type = "text/csv"
             blob.upload_from_filename(str(source_path))
+
+    # TODO refactor - repo pattern
+    def store_csv_file_from_blob(
+        self,
+        source_bucket_name: str,
+        source_blob_path: str,
+        target_bucket_name: str,
+        target_blob_path: str,
+        compress: bool = True,
+    ) -> None:
+        """Move a CSV file from one blob location to another with optional compression.
+
+        Args:
+            source_bucket_name: Name of the source GCP bucket
+            source_blob_path: Path of the source blob
+            target_bucket_name: Name of the target GCP bucket
+            target_blob_path: Path for the target blob
+            compress: Whether to compress the file using gzip
+        """
+        if self._client is None:
+            raise RuntimeError("GCP Storage client not initialised")
+
+        source_bucket = self._client.bucket(source_bucket_name)
+        source_blob = source_bucket.blob(source_blob_path)
+        target_bucket = self._client.bucket(target_bucket_name)
+        target_blob = target_bucket.blob(target_blob_path)
+
+        # Download content as bytes to preserve the original format
+        content = source_blob.download_as_bytes()
+
+        if compress:
+            # Compress the content if it's not already compressed
+            if not source_blob.content_encoding == "gzip":
+                content = gzip.compress(content)
+                target_blob.content_encoding = "gzip"
+
+        # Set the content type to match the source, defaulting to text/csv if not set
+        target_blob.content_type = source_blob.content_type or "text/csv"
+
+        # Upload the content
+        target_blob.upload_from_string(
+            content,
+            content_type=target_blob.content_type,
+        )

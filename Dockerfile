@@ -13,8 +13,8 @@ ENV PYTHONPATH=/opt/prefect/quanterra-pipeline
 ENV PATH="/root/.local/bin:$PATH"
 ENV UV_SYSTEM_PYTHON=1
 
-# Copy only necessary files for installation
-COPY pyproject.toml ./
+# Copy package files needed for installation
+COPY pyproject.toml README.md ./
 
 # Install dependencies with UV
 RUN mkdir -p /root/.cache/uv && \
