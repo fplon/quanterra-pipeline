@@ -41,7 +41,7 @@ jobs:
       - name: Update version file
         run: |
           echo '{
-            "version": "'$(python setup.py --version)'",
+            "version": "'$(uv pip show quanterra-pipeline | grep Version | cut -d' ' -f2)'",
             "release_date": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
           }' > latest_version.json
-          gsutil cp latest_version.json gs://datalake-dev-bronze/'
+          gsutil cp latest_version.json gs://datalake-dev-bronze/
