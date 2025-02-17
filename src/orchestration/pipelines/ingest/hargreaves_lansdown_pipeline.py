@@ -3,7 +3,7 @@ import asyncio
 from prefect import flow, get_run_logger
 from prefect_gcp import GcpCredentials
 
-from src.clients.file.base_csv_client import BaseCSVFileClient
+from src.clients.file.google_cloud_file_client import GoogleCloudFileClient
 from src.models.config.pipeline_settings import Environment, SimpleEnvironmentSettings
 from src.models.config.processor_settings import HargreavesLansdownConfig
 from src.orchestration.processors.ingest.hargreaves_lansdown_processor import (
@@ -38,7 +38,7 @@ async def hargreaves_lansdown_transactions_flow(
         gcp_credentials=gcp_credentials.get_credentials_from_service_account(),
     )
 
-    client = BaseCSVFileClient()
+    client = GoogleCloudFileClient(bucket_name=config.bucket_name)
 
     # Process transactions
     process_tasks = [
