@@ -28,6 +28,16 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
+          token_format: 'access_token'
+          create_credentials_file: true
+          export_environment_variables: true
+          cleanup_credentials: true
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          install_components: 'gsutil'
 
       - name: Build package
         run: uv build
@@ -44,4 +54,4 @@ jobs:
             "version": "'$(uv pip show quanterra-pipeline | grep Version | cut -d' ' -f2)'",
             "release_date": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
           }' > latest_version.json
-          gsutil cp latest_version.json gs://datalake-dev-bronze/
+          gsutil -h "Content-Type:application/json" cp latest_version.json gs://datalake-dev-bronze/
