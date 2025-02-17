@@ -4,9 +4,15 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
+
+env:
+  ENVIRONMENT: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
 jobs:
-  release:
+  cli-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,10 +34,6 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-        #   token_format: 'access_token'
-        #   create_credentials_file: true
-        #   export_environment_variables: true
-        #   cleanup_credentials: true
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -46,7 +48,7 @@ jobs:
         uses: google-github-actions/upload-cloud-storage@v2
         with:
           path: 'dist/'
-          destination: 'datalake-dev-bronze/versions/'
+          destination: 'datalake-${{ env.ENVIRONMENT }}-cli-tool-config/versions/'
 
       - name: Update version file
         run: |
@@ -54,4 +56,4 @@ jobs:
             "version": "'$(uv pip show quanterra-pipeline | grep Version | cut -d' ' -f2)'",
             "release_date": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
           }' > latest_version.json
-          gsutil -h "Content-Type:application/json" cp latest_version.json gs://datalake-dev-bronze/
+          gsutil -h "Content-Type:application/json" cp latest_version.json gs://datalake-${{ env.ENVIRONMENT }}-cli-tool-config/
