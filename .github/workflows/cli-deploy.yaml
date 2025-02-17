@@ -28,10 +28,10 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-          token_format: 'access_token'
-          create_credentials_file: true
-          export_environment_variables: true
-          cleanup_credentials: true
+        #   token_format: 'access_token'
+        #   create_credentials_file: true
+        #   export_environment_variables: true
+        #   cleanup_credentials: true
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
