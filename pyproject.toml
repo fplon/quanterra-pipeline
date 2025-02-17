@@ -1,6 +1,6 @@
 [project]
 name = "quanterra-pipeline"
-version = "0.1.0"
+version = "0.1.1"
 description = "Data pipeline for Quanterra data lake"
 readme = "README.md"
 requires-python = ">=3.12"
