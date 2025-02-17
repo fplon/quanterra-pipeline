@@ -42,13 +42,13 @@ jobs:
           install_components: 'gsutil'
 
       - name: Build package
-        run: uv build
+        run: |
+          uv build
+          ls -la dist/
 
       - name: Upload package
-        uses: google-github-actions/upload-cloud-storage@v2
-        with:
-          path: dist/quanterra_pipeline-*.tar.gz
-          destination: 'datalake-${{ env.ENVIRONMENT }}-cli-tool-config/versions/'
+        run: |
+          gsutil cp dist/quanterra_pipeline-*.tar.gz gs://datalake-${{ env.ENVIRONMENT }}-cli-tool-config/versions/
 
       - name: Update version file
         run: |
