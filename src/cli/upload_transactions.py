@@ -2,13 +2,18 @@ from datetime import datetime
 from pathlib import Path
 
 import click
-from prefect import flow
+from prefect import flow, get_run_logger
 from prefect.deployments import run_deployment
 from pydantic import BaseModel
 
 from src.cli.tool_update import CLIToolUpdater
 from src.clients.google_cloud_storage_client import GCPStorageClient
 from src.models.config.pipeline_settings import Environment
+
+
+def log_cli_message(level: str, message: str) -> None:
+    timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+    click.echo(f"{timestamp} | {level:8} | {message}")
 
 
 @click.group()
@@ -47,13 +52,24 @@ class PrefectFlowParams(BaseModel):
 
 @flow
 def trigger_prefect_flow(flow: str, deployment: str, parameters: PrefectFlowParams) -> str:
-    """Trigger a Prefect flow run with the given parameters."""
+    """Trigger a Prefect flow run with the given parameters and monitor its execution."""
+    logger = get_run_logger()
+    logger.info(f"Triggering deployment flow: {flow}/{deployment}")
 
     deployment_run = run_deployment(
         name=f"{flow}/{deployment}",
         parameters=parameters.model_dump(exclude_unset=True),
+        poll_interval=5,  # Check status every 5 seconds
     )
-    return deployment_run.id
+
+    if deployment_run.state and deployment_run.state.is_failed():
+        raise click.ClickException(
+            f"Flow run failed with message: {deployment_run.state.message}\n"
+            f"For more details, visit the flow run in Prefect Cloud."
+        )
+
+    logger.info(f"Flow run completed successfully: {deployment_run.id}")
+    return str(deployment_run.id)
 
 
 @cli.command()
@@ -64,7 +80,11 @@ def interactive_investor(ctx, portfolio_name: str, transactions_path: Path):
     """Upload Interactive Investor transactions"""
     env = ctx.parent.params["env"]
     env_enum = Environment(env)
+
+    log_cli_message("INFO", "Beginning Interactive Investor file upload")
+    log_cli_message("INFO", f"Uploading file to GCS: {transactions_path}")
     gcs_path = _upload_to_gcs(transactions_path, env_enum)
+    log_cli_message("INFO", f"File uploaded successfully to: {gcs_path}")
 
     flow_id = trigger_prefect_flow(
         flow="interactive_investor_transactions",
@@ -75,7 +95,7 @@ def interactive_investor(ctx, portfolio_name: str, transactions_path: Path):
             env=env,
         ),
     )
-    click.echo(f"Flow run created: {flow_id}")
+    log_cli_message("INFO", f"Flow run created: {flow_id}")
 
 
 @cli.command()
@@ -97,11 +117,15 @@ def hargreaves_lansdown(
     env = ctx.parent.params["env"]
     env_enum = Environment(env)
 
+    log_cli_message("INFO", "Beginning Hargreaves Lansdown file upload")
+    log_cli_message("INFO", "Uploading files to GCS")
+
     paths = {
         "transactions_source_path": _upload_to_gcs(transactions_path, env_enum),
         "positions_source_path": _upload_to_gcs(positions_path, env_enum),
         "closed_positions_source_path": _upload_to_gcs(closed_positions_path, env_enum),
     }
+    log_cli_message("INFO", "All files uploaded successfully")
 
     flow_id = trigger_prefect_flow(
         flow="hargreaves_lansdown_transactions",
@@ -112,5 +136,4 @@ def hargreaves_lansdown(
             env=env,
         ),
     )
-
-    click.echo(f"Flow run created: {flow_id}")
+    log_cli_message("INFO", f"Flow run created: {flow_id}")
