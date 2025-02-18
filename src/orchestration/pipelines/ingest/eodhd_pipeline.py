@@ -36,7 +36,7 @@ async def eodhd_market_data_flow(env: str = "dev") -> None:
         instruments=env_settings.instruments,
         macro_indicators=env_settings.macro_indicators,
         macro_countries=env_settings.macro_countries,
-        bucket_name=env_settings.bucket_name,
+        bucket_name=env_settings.target_bucket_name,
         gcp_credentials=gcp_credentials.get_credentials_from_service_account(),
     )
 

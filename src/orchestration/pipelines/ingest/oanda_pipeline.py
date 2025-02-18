@@ -33,7 +33,7 @@ async def oanda_market_data_flow(env: str = "dev") -> None:
         granularity=env_settings.granularity,
         count=env_settings.count,
         price="MBA",
-        bucket_name=env_settings.bucket_name,
+        bucket_name=env_settings.target_bucket_name,
         gcp_credentials=gcp_credentials.get_credentials_from_service_account(),
     )
 

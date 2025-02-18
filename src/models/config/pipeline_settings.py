@@ -40,10 +40,12 @@ class BaseEnvironmentSettings(Generic[T]):
 class SimpleEnvironmentSettings(BaseEnvironmentSettings[SimpleFlowSettings]):
     _settings = {
         Environment.DEV: SimpleFlowSettings(
-            bucket_name="datalake-dev-bronze",
+            source_bucket_name="datalake-dev-landing",
+            target_bucket_name="datalake-dev-bronze",
         ),
         Environment.PROD: SimpleFlowSettings(
-            bucket_name="datalake-prod-bronze",
+            source_bucket_name="datalake-prod-landing",
+            target_bucket_name="datalake-prod-bronze",
         ),
     }
 
@@ -60,7 +62,7 @@ class EODHDEnvironmentSettings(BaseEnvironmentSettings[EODHDFlowSettings]):
                 "gdp_growth_annual",
             ],
             macro_countries=["GBR", "USA"],
-            bucket_name="datalake-dev-bronze",
+            target_bucket_name="datalake-dev-bronze",
         ),
         Environment.PROD: EODHDFlowSettings(
             exchanges=[
@@ -155,7 +157,7 @@ class EODHDEnvironmentSettings(BaseEnvironmentSettings[EODHDFlowSettings]):
                 "BEL",  # Belgium
                 "AUT",  # Austria
             ],
-            bucket_name="datalake-prod-bronze",
+            target_bucket_name="datalake-prod-bronze",
         ),
     }
 
@@ -166,13 +168,13 @@ class OANDAEnvironmentSettings(BaseEnvironmentSettings[OANDAFlowSettings]):
             instruments=["CAD_JPY", "EUR_USD", "GBP_USD", "USD_JPY"],
             granularity="D",
             count=50,
-            bucket_name="datalake-dev-bronze",
+            target_bucket_name="datalake-dev-bronze",
         ),
         Environment.PROD: OANDAFlowSettings(
             instruments=[],  # Get all
             granularity="M1",
             count=60 * 24 * 3,
-            bucket_name="datalake-prod-bronze",
+            target_bucket_name="datalake-prod-bronze",
         ),
     }
 
@@ -185,7 +187,7 @@ class YahooFinanceEnvironmentSettings(BaseEnvironmentSettings[YahooFinanceFlowSe
                 "0P000102MS.L",
                 "0P0000KSPA.L",
             ],
-            bucket_name="datalake-dev-bronze",
+            target_bucket_name="datalake-dev-bronze",
         ),
         Environment.PROD: YahooFinanceFlowSettings(
             tickers=[
@@ -251,6 +253,6 @@ class YahooFinanceEnvironmentSettings(BaseEnvironmentSettings[YahooFinanceFlowSe
                 "0P000102MM.L",
                 "0P0001EI7Y.L",
             ],
-            bucket_name="datalake-prod-bronze",
+            target_bucket_name="datalake-prod-bronze",
         ),
     }

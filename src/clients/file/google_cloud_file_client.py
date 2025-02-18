@@ -11,19 +11,17 @@ class GoogleCloudFileClient(BaseCSVFileClient):
 
     def __init__(
         self,
-        bucket_name: str,
         delimiter: str = ",",
         encoding: str = "ISO-8859-1",
         preview_rows: int = 15,
     ) -> None:
         super().__init__(delimiter=delimiter, encoding=encoding, preview_rows=preview_rows)
-        self.bucket_name = bucket_name
         self.storage_client = GCPStorageClient()
-        self.bucket = self.storage_client._client.bucket(self.bucket_name)
 
-    def preview_file(self, source_path: str | Path) -> list[list[str]]:
+    def preview_file(self, bucket_name: str, source_path: str | Path) -> list[list[str]]:
         """Read first few rows of CSV file from Google Cloud Storage."""
-        blob = self.bucket.blob(str(source_path))
+        bucket = self.storage_client._client.bucket(bucket_name)
+        blob = bucket.blob(str(source_path))
 
         # Download the content as a string
         content = blob.download_as_text(encoding=self.encoding)
@@ -36,12 +34,13 @@ class GoogleCloudFileClient(BaseCSVFileClient):
         # Get the preview rows
         return [row for _, row in zip(range(self.preview_rows), reader)]
 
-    def validate_file_type(self, source_path: str | Path) -> bool:
+    def validate_file_type(self, bucket_name: str, source_path: str | Path) -> bool:
         """Validate CSV file format and content in Google Cloud Storage."""
         # First check if the path has a .csv extension
         if not Path(source_path).suffix.lower() == ".csv":
             return False
 
         # Then verify the file exists in the bucket
-        blob = self.bucket.blob(str(source_path))
+        bucket = self.storage_client._client.bucket(bucket_name)
+        blob = bucket.blob(str(source_path))
         return blob.exists()
