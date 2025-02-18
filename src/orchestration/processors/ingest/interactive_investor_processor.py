@@ -19,9 +19,8 @@ async def store_data(
 ) -> None:
     """Store Interactive Investor data in Google Cloud Storage."""
     storage_client = GCPStorageClient(credentials=config.gcp_credentials)
-    # TODO better transfer bucket to bucket
     storage_client.store_csv_file_from_blob(
-        source_bucket_name=location.bucket,  # TODO make discinct in case different buckets used
+        source_bucket_name=config.source_bucket_name,
         source_blob_path=config.source_path,
         target_bucket_name=location.bucket,
         target_blob_path=location.path,
@@ -37,12 +36,12 @@ async def process_transactions(
     logger.info("Processing Interactive Investor transaction data")
     try:
         # Validate file format
-        if not client.validate_file_type(config.source_path):
+        if not client.validate_file_type(config.source_bucket_name, config.source_path):
             raise ValueError("Invalid Interactive Investor CSV file format")
 
         # Preview data for validation
         # TODO not sure is this is needed - dependency created though into StorageLocation
-        preview_data = client.preview_file(config.source_path)
+        preview_data = client.preview_file(config.source_bucket_name, config.source_path)
         data = InteractiveInvestorTransaction(
             data=preview_data,
             portfolio_name=config.portfolio_name,
@@ -51,7 +50,7 @@ async def process_transactions(
 
         # Get storage location
         location = StorageLocation(
-            bucket=config.bucket_name,
+            bucket=config.target_bucket_name,
             path=data.get_storage_path(),
         )
 

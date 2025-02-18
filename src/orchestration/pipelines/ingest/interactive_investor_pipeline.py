@@ -24,14 +24,15 @@ async def interactive_investor_transactions_flow(
     # Create config
     env_settings = SimpleEnvironmentSettings.get_settings(env)
     config = InteractiveInvestorConfig(
-        bucket_name=env_settings.bucket_name,
+        source_bucket_name=env_settings.source_bucket_name,
         source_path=transactions_source_path,
+        target_bucket_name=env_settings.target_bucket_name,
         portfolio_name=portfolio_name,
         gcp_credentials=gcp_credentials.get_credentials_from_service_account(),
     )
 
     # Create a single client instance
-    client = GoogleCloudFileClient(bucket_name=config.bucket_name)
+    client = GoogleCloudFileClient()
 
     # Process transactions
     await process_transactions(config, client)

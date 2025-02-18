@@ -30,7 +30,8 @@ async def hargreaves_lansdown_transactions_flow(
 
     env_settings = SimpleEnvironmentSettings.get_settings(env)
     config = HargreavesLansdownConfig(
-        bucket_name=env_settings.bucket_name,
+        source_bucket_name=env_settings.source_bucket_name,
+        target_bucket_name=env_settings.target_bucket_name,
         transactions_source_path=transactions_source_path,
         positions_source_path=positions_source_path,
         closed_positions_source_path=closed_positions_source_path,
@@ -38,7 +39,7 @@ async def hargreaves_lansdown_transactions_flow(
         gcp_credentials=gcp_credentials.get_credentials_from_service_account(),
     )
 
-    client = GoogleCloudFileClient(bucket_name=config.bucket_name)
+    client = GoogleCloudFileClient()
 
     # Process transactions
     process_tasks = [

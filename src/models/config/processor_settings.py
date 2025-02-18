@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 
 class SimpleFlowSettings(BaseModel):
-    bucket_name: str
+    source_bucket_name: str | None = None
+    target_bucket_name: str
 
 
 class EODHDFlowSettings(SimpleFlowSettings):
@@ -81,7 +82,8 @@ class YahooFinanceConfig(BaseModel):
 class HargreavesLansdownConfig(BaseModel):
     """Configuration for Hargreaves Lansdown data ingestion."""
 
-    bucket_name: str
+    source_bucket_name: str
+    target_bucket_name: str
     portfolio_name: str = "unassigned"
     transactions_source_path: str | None = None
     positions_source_path: str | None = None
@@ -98,7 +100,8 @@ class HargreavesLansdownConfig(BaseModel):
 class InteractiveInvestorConfig(BaseModel):
     """Configuration for Interactive Investor data ingestion."""
 
-    bucket_name: str
+    source_bucket_name: str
+    target_bucket_name: str
     source_path: str
     portfolio_name: str
     gcp_credentials: Credentials | ServiceAccountCredentials | None = None

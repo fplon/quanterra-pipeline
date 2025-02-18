@@ -23,7 +23,7 @@ async def store_data(
     """Store Hargreaves Lansdown data in Google Cloud Storage."""
     storage_client = GCPStorageClient(credentials=config.gcp_credentials)
     storage_client.store_csv_file_from_blob(
-        source_bucket_name=location.bucket,  # TODO make discinct in case different buckets used
+        source_bucket_name=config.source_bucket_name,
         source_blob_path=source_path,  # slightly different to II
         target_bucket_name=location.bucket,
         target_blob_path=location.path,
@@ -38,10 +38,14 @@ async def process_transactions(
     """Process and store Hargreaves Lansdown transaction data."""
     logger.info("Processing Hargreaves Lansdown transaction data")
     try:
-        if not client.validate_file_type(config.transactions_source_path):
+        if not client.validate_file_type(
+            config.source_bucket_name, config.transactions_source_path
+        ):
             raise ValueError("Invalid Hargreaves Lansdown CSV file format")
 
-        preview_data = client.preview_file(config.transactions_source_path)
+        preview_data = client.preview_file(
+            config.source_bucket_name, config.transactions_source_path
+        )
         data = HargreavesLansdownTransaction(
             data=preview_data,
             portfolio_name=config.portfolio_name,
@@ -49,7 +53,7 @@ async def process_transactions(
         )
 
         location = StorageLocation(
-            bucket=config.bucket_name,
+            bucket=config.target_bucket_name,
             path=data.get_storage_path(),
         )
 
@@ -67,10 +71,10 @@ async def process_positions(
     """Process and store Hargreaves Lansdown positions data."""
     logger.info("Processing Hargreaves Lansdown positions data")
     try:
-        if not client.validate_file_type(config.positions_source_path):
+        if not client.validate_file_type(config.source_bucket_name, config.positions_source_path):
             raise ValueError("Invalid Hargreaves Lansdown CSV file format")
 
-        preview_data = client.preview_file(config.positions_source_path)
+        preview_data = client.preview_file(config.source_bucket_name, config.positions_source_path)
         data = HargreavesLansdownPosition(
             data=preview_data,
             portfolio_name=config.portfolio_name,
@@ -78,7 +82,7 @@ async def process_positions(
         )
 
         location = StorageLocation(
-            bucket=config.bucket_name,
+            bucket=config.target_bucket_name,
             path=data.get_storage_path(),
         )
 
@@ -96,10 +100,14 @@ async def process_closed_positions(
     """Process and store Hargreaves Lansdown closed positions data."""
     logger.info("Processing Hargreaves Lansdown closed positions data")
     try:
-        if not client.validate_file_type(config.closed_positions_source_path):
+        if not client.validate_file_type(
+            config.source_bucket_name, config.closed_positions_source_path
+        ):
             raise ValueError("Invalid Hargreaves Lansdown CSV file format")
 
-        preview_data = client.preview_file(config.closed_positions_source_path)
+        preview_data = client.preview_file(
+            config.source_bucket_name, config.closed_positions_source_path
+        )
         data = HargreavesLansdownClosedPosition(
             data=preview_data,
             portfolio_name=config.portfolio_name,
@@ -107,7 +115,7 @@ async def process_closed_positions(
         )
 
         location = StorageLocation(
-            bucket=config.bucket_name,
+            bucket=config.target_bucket_name,
             path=data.get_storage_path(),
         )
 

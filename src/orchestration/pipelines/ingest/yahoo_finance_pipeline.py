@@ -25,7 +25,7 @@ async def yahoo_finance_market_data_flow(env: str = "dev") -> None:
     # Create config
     env_settings = YahooFinanceEnvironmentSettings.get_settings(env)
     config = YahooFinanceConfig(
-        bucket_name=env_settings.bucket_name,
+        bucket_name=env_settings.target_bucket_name,
         tickers=env_settings.tickers,
         gcp_credentials=gcp_credentials.get_credentials_from_service_account(),
     )
