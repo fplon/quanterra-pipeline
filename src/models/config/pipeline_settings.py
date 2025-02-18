@@ -73,10 +73,15 @@ class EODHDEnvironmentSettings(BaseEnvironmentSettings[EODHDFlowSettings]):
                 "US",
                 "LSE",
                 "XETRA",
-                # "EUFUND",
-                # "INDX",
+                "EUFUND",
+                "INDX",
             ],
-            instruments=[],  # Get all instruments for the above exchanges
+            # TODO memory and time limit issues
+            # instruments=[],  # Get all instruments for the above exchanges
+            instruments=[
+                "GB00B9876293.EUFUND",
+                "GB00BG0QPQ07.EUFUND",
+            ],
             macro_indicators=[
                 "real_interest_rate",
                 "population_total",
